@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v113</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v114</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1943,7 +1943,7 @@ var saveMsg_timer = null;
 function saveState(){
   // v3: all arrays saved by NAME, not index — survives additions/reorderings in updates
   var bizMap={}, upgMap={}, perkMap={}, conMap={}, treeMap={};
-  for(var i=0;i<businesses.length;i++) bizMap[businesses[i].name]={owned:businesses[i].owned,mult:businesses[i].mult};
+  for(var i=0;i<businesses.length;i++) bizMap[businesses[i].name]={owned:businesses[i].owned,mult:businesses[i].mult,timer:businesses[i].timer};
   for(var i=0;i<upgrades.length;i++) upgMap[upgrades[i].name]={bought:upgrades[i].bought};
   for(var i=0;i<perks.length;i++) perkMap[perks[i].name]={owned:perks[i].owned};
   for(var i=0;i<consumables.length;i++) conMap[consumables[i].name]={cdLeft:consumables[i].cdLeft,count:consumables[i].count};
@@ -2006,7 +2006,7 @@ function loadState(s){
   // Restore by name — new items added in updates simply start at default (not owned/bought)
   if(s.businesses) for(var i=0;i<businesses.length;i++){
     var d=s.businesses[businesses[i].name];
-    if(d){businesses[i].owned=d.owned||0;businesses[i].mult=d.mult||1;}
+    if(d){businesses[i].owned=d.owned||0;businesses[i].mult=d.mult||1;businesses[i].timer=d.timer||0;}
     businesses[i].timer=0;
   }
   if(s.upgrades) for(var i=0;i<upgrades.length;i++){
