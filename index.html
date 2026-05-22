@@ -249,7 +249,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v73</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v74</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -2104,18 +2104,57 @@ function closeSave(){ document.getElementById("save-modal").className=""; }
 // ── FEEDBACK SYSTEM ──
 // Feedback goes to a separate npoint bin — create one at npoint.io with {"feedback":[]}
 // and paste the ID below.
-var FEEDBACK_URL="https://corsproxy.io/?https://api.npoint.io/FEEDBACK_BIN_ID_HERE";
+var FEEDBACK_URL="https://corsproxy.io/?https://api.npoint.io/09329e1d13244cf112d9";
 
 function openFeedback(){ document.getElementById("feedback-modal").className="open"; document.getElementById("feedback-msg").textContent=""; }
 function closeFeedback(){ document.getElementById("feedback-modal").className=""; }
+
+// Feedback filter — blocks genuine hate/slurs but allows mild language like "stupid", "idiot"
+function _isFeedbackAllowed(text){
+  var n=_normalizeName(text); // reuse the leet-speak normalizer
+  // Hard blocked — same as name filter but applied to the full text
+  var hardBlocked=[
+    'nigger','nigga','niger','niqqa','niqqer','chink','gook','spic','spick',
+    'kike','wetback','towelhead','raghead','zipperhead','beaner','coon',
+    'jigaboo','darkie','sambo','pickaninny',
+    'faggot','fagot','faget','tranny','shemale',
+    'kkk','nazi','heil','hitler','holocaust','auschwitz','genocide',
+    '911','sept11','twintowers','columbine','sandyhook','uvalde','parkland',
+    'penis','vagina','pussy','cock','dick','cunt','anus',
+    'whore','slut','hoe','skank','boob','tits','porn',
+    'xxx','nude','naked','masturbat','orgasm',
+    'motherfuck','horseshit',
+  ];
+  for(var i=0;i<hardBlocked.length;i++){
+    if(n.indexOf(hardBlocked[i])>=0)return false;
+  }
+  // Note: "idiot", "stupid", "dumb", "hate", "bad", "sucks" are intentionally allowed
+  return true;
+}
+
+// Simple browser fingerprint — not personally identifying, just enough to
+// group repeated abuse from the same device. Uses canvas hash + timezone + language.
+function _getFingerprint(){
+  try{
+    var c=document.createElement('canvas');
+    var ctx2=c.getContext('2d');
+    ctx2.textBaseline='top';
+    ctx2.font='14px Arial';
+    ctx2.fillText('hustle',2,2);
+    var hash=c.toDataURL().slice(-20);
+    return hash+'|'+Intl.DateTimeFormat().resolvedOptions().timeZone+'|'+navigator.language;
+  }catch(e){return 'unknown';}
+}
 
 async function submitFeedback(){
   var text=document.getElementById("feedback-text").value.trim();
   if(!text){document.getElementById("feedback-msg").textContent="Please write something first.";document.getElementById("feedback-msg").style.color="#ff4444";return;}
   if(text.length>500){document.getElementById("feedback-msg").textContent="Please keep it under 500 characters.";document.getElementById("feedback-msg").style.color="#ff4444";return;}
-  if(FEEDBACK_URL.includes("FEEDBACK_BIN_ID_HERE")){
-    document.getElementById("feedback-msg").textContent="Feedback system not configured yet.";
-    document.getElementById("feedback-msg").style.color="#ffcc44";return;
+  // Content filter
+  if(!_isFeedbackAllowed(text)){
+    document.getElementById("feedback-msg").textContent="❌ Your feedback contains content that isn't allowed.";
+    document.getElementById("feedback-msg").style.color="#ff4444";
+    return;
   }
   try{
     document.getElementById("feedback-msg").textContent="Sending...";
@@ -2123,7 +2162,13 @@ async function submitFeedback(){
     var resp=await fetch(FEEDBACK_URL);
     var data=await resp.json();
     var entries=data.feedback||[];
-    entries.push({text:text,ts:Date.now(),level:playerLevel,prestige:prestigeCount});
+    entries.push({
+      text:text,
+      ts:Date.now(),
+      level:playerLevel,
+      prestige:prestigeCount,
+      fp:_getFingerprint()  // anonymous fingerprint for tracing repeat abuse
+    });
     await fetch(FEEDBACK_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({feedback:entries})});
     document.getElementById("feedback-msg").textContent="✓ Feedback sent! Thank you.";
     document.getElementById("feedback-msg").style.color="#44ff88";
