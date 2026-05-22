@@ -106,7 +106,15 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
 #rainbow-overlay { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
 #prestige-overlay { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(200,100,255,0.35), transparent); transition: opacity 1s; }
 
-/* Save / Load system */
+#disclaimer-modal { position:fixed;inset:0;background:rgba(0,0,0,0.97);z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center; }
+#disclaimer-modal.open { display:flex; }
+#disclaimer-box { background:#0d0d0d;border:1px solid #2a2a2a;border-radius:12px;padding:28px 30px;width:460px;max-width:94vw;text-align:center; }
+#disclaimer-box h2 { font-size:18px;color:#44ff88;margin-bottom:8px; }
+#disclaimer-box .disc-sub { font-size:12px;color:#ffcc44;margin-bottom:18px;font-style:italic; }
+#disclaimer-box p { font-size:12px;color:#aaa;line-height:1.7;margin-bottom:12px;text-align:left; }
+#disclaimer-box .disc-highlight { color:#44aaff;font-weight:bold; }
+#disclaimer-ok { width:100%;margin-top:8px;background:#44ff8820;border:1px solid #44ff8860;color:#44ff88;padding:10px;border-radius:6px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:bold; }
+#disclaimer-ok:hover { background:#44ff8840; }
 #save-btn { background: #111; border: 1px solid #333; color: #888; width: 24px; height: 24px; border-radius: 4px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
 #save-btn:hover { background: #1a1a1a; border-color: #44ff88; }
 #lb-btn { background: #111; border: 1px solid #333; color: #888; width: 24px; height: 24px; border-radius: 4px; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
@@ -246,10 +254,11 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
       <div id="per-sec">$0.00/sec</div>
       <div id="hustle-tokens">⬡ 0 Hustle Tokens</div>
       <div id="prestige-preview"></div>
+      <div id="player-count" style="font-size:10px;color:#2a2a2a;margin-top:1px;"></div>
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v74</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v76</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -472,6 +481,18 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
 
   </div>
 </div>
+<!-- First-time disclaimer -->
+<div id="disclaimer-modal">
+  <div id="disclaimer-box">
+    <h2>🎮 Welcome to Hustle Simulator!</h2>
+    <div class="disc-sub">Early Access — Thank you for playing!</div>
+    <p>This game is <span class="disc-highlight">still in development</span>. You may encounter bugs, unbalanced upgrades, or features that aren't fully polished yet. This is completely normal and expected at this stage.</p>
+    <p>Your experience matters to us. If you find a bug, notice something feels unfair, or have a suggestion to make the game better — please use the <span class="disc-highlight">💬 feedback button</span> in the top-right corner of your screen. It looks like a speech bubble. You can report bugs or help us balance the game — all feedback is anonymous and goes directly to the developer.</p>
+    <p style="color:#666;font-size:11px;">Thank you for helping us test and improve Hustle! 🙏</p>
+    <button id="disclaimer-ok" onclick="closeDisclaimer()">Let's Play! 🚀</button>
+  </div>
+</div>
+
 <!-- Feedback modal -->
 <div id="feedback-modal">
   <div id="feedback-box">
@@ -2097,7 +2118,17 @@ function importSave(){
   }catch(e){showSaveMsg("❌ Import failed — string may be corrupted.","#ff4444");}
 }
 
-function openSave(){ document.getElementById("save-modal").className="open"; renderSaveSlots(); }
+function closeDisclaimer(){
+  document.getElementById("disclaimer-modal").className="";
+  localStorage.setItem("hustle_disclaimer_seen","1");
+}
+
+// Show disclaimer on first ever visit
+(function(){
+  if(!localStorage.getItem("hustle_disclaimer_seen")){
+    document.getElementById("disclaimer-modal").className="open";
+  }
+})();
 function closeSave(){ document.getElementById("save-modal").className=""; }
 
 // ── LEADERBOARD ──
@@ -2180,6 +2211,55 @@ async function submitFeedback(){
   }
 }
 var LB_URL="https://corsproxy.io/?https://api.npoint.io/38273609a166d56da096";
+
+// ── PLAYER PRESENCE (concurrent count) ──
+var PRESENCE_SESSION=Math.random().toString(36).slice(2,10); // unique per tab
+var PRESENCE_INTERVAL=null;
+
+async function presencePing(){
+  try{
+    var resp=await fetch(LB_URL);
+    if(!resp.ok)return;
+    var data=await resp.json();
+    var presence=data.presence||{};
+    var now=Date.now();
+    // Write our heartbeat
+    presence[PRESENCE_SESSION]={ts:now};
+    // Prune sessions older than 90s
+    var active=0;
+    Object.keys(presence).forEach(function(k){
+      if(now-(presence[k].ts||0)>90000)delete presence[k];
+      else active++;
+    });
+    // Update display
+    var el=document.getElementById("player-count");
+    if(el)el.textContent=active+" online";
+    // Write back (don't await — fire and forget to avoid blocking)
+    fetch(LB_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({scores:data.scores||[],presence:presence,feedback:data.feedback})});
+  }catch(e){}
+}
+
+// Ping on load and every 30s
+setTimeout(presencePing,2000);
+PRESENCE_INTERVAL=setInterval(presencePing,30000);
+
+// Remove our presence when tab closes
+window.addEventListener("beforeunload",function(){
+  try{
+    // Best-effort sync removal
+    var xhr=new XMLHttpRequest();
+    xhr.open("GET",LB_URL,false); // sync
+    xhr.send();
+    var data=JSON.parse(xhr.responseText);
+    var presence=data.presence||{};
+    delete presence[PRESENCE_SESSION];
+    var xhrPut=new XMLHttpRequest();
+    xhrPut.open("POST",LB_URL,false);
+    xhrPut.setRequestHeader("Content-Type","application/json");
+    xhrPut.send(JSON.stringify({scores:data.scores||[],presence:presence}));
+  }catch(e){}
+});
 var LB_LINK_STORE="hustle_lb_link";
 var lbLinkedSlot=null;
 var lbLinkedName=null;
