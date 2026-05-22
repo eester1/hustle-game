@@ -2079,6 +2079,12 @@ async function loadLeaderboard(){
     if(!resp.ok)throw new Error("HTTP "+resp.status);
     var data=await resp.json();
     var scores=data.scores||[];
+    // Strip blocked names and purge them from the bin
+    var clean=scores.filter(function(e){return e.name&&_isNameAllowed(e.name);});
+    if(clean.length<scores.length){
+      fetch(LB_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scores:clean})});
+      scores=clean;
+    }
     scores.sort(function(a,b){return b.score-a.score;});
     lbData=scores;
     renderLeaderboard(scores);
@@ -2171,21 +2177,36 @@ async function linkSlot(){
     var n=window.prompt("Enter your display name (max 24 chars):","");
     if(!n||!n.trim()){lbStatus("Cancelled.","#555");return;}
     name=n.trim().slice(0,24);
-    if(!_isNameAllowed(name)){
-      lbStatus("❌ That name isn't allowed. Please choose a different name.","#ff4444");
-      return;
-    }
     score=totalEarned;
   } else {
     var slot=parseInt(val);
     var info=slotSummary(slot);
     if(!info){lbStatus("Slot is empty!","#ff4444");return;}
-    name=getSlotNick(slot)||"Slot "+slot;
+    // Use slot nick but strip anything inappropriate
+    var nick=getSlotNick(slot)||"Slot "+slot;
+    // If slot nickname is blocked, ask for a different name
+    if(!_isNameAllowed(nick)){
+      var n2=window.prompt("Your save slot name isn't allowed on the leaderboard. Enter a display name instead (max 24 chars):","");
+      if(!n2||!n2.trim()){lbStatus("Cancelled.","#555");return;}
+      nick=n2.trim().slice(0,24);
+    }
+    name=nick;
     score=info.totalEarned;
+  }
+
+  // Filter check applies to ALL name sources
+  if(!_isNameAllowed(name)){
+    lbStatus("❌ That name isn't allowed. Please choose a different name.","#ff4444");
+    return;
   }
   if(score<=0){lbStatus("No earnings yet!","#ff4444");return;}
 
   lbStatus("Linking...","#555");
+  // If already linked under a different name, remove the old entry first
+  var oldName=lbLinkedName;
+  if(oldName&&oldName!==name){
+    await removeScore(oldName);
+  }
   var ok=await pushScore(name,score);
   if(ok){
     lbLinkedSlot=(val==="current")?"current":parseInt(val);
@@ -2221,7 +2242,20 @@ async function pushScore(name,score){
   }catch(e){return false;}
 }
 
-// Auto-update: called every 60s from autosave interval
+async function removeScore(name){
+  try{
+    var resp=await fetch(LB_URL);
+    if(!resp.ok)return false;
+    var data=await resp.json();
+    var scores=(data.scores||[]).filter(function(e){return e.name!==name;});
+    var put=await fetch(LB_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({scores:scores})
+    });
+    return put.ok;
+  }catch(e){return false;}
+}
 async function lbAutoUpdate(){
   if(!lbLinkedSlot||!lbLinkedName)return;
   var score=0;
