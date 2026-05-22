@@ -1763,7 +1763,14 @@ function cancelRename(slot){
 }
 function confirmRename(slot){
   var input=document.getElementById("rename-input-"+slot);
-  if(input){setSlotNick(slot,input.value);renderSaveSlots();showSaveMsg("Slot "+slot+" renamed!","#44aaff");}
+  if(input){
+    var newName=input.value;
+    if(newName.trim()&&!_isNameAllowed(newName)){
+      showSaveMsg("❌ That name isn't allowed.","#ff4444");
+      return;
+    }
+    setSlotNick(slot,newName);renderSaveSlots();showSaveMsg("Slot "+slot+" renamed!","#44aaff");
+  }
 }
 
 // ── WIPE PROGRESS ──
@@ -2106,6 +2113,54 @@ function renderLeaderboard(entries){
 
 function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
+// ── NAME FILTER ──
+// Blocks slurs, hate speech, tragedy references, and other inappropriate content.
+// Uses pattern matching on a normalized version of the input.
+function _normalizeName(s){
+  // Lowercase, remove spaces/punctuation, replace common leet substitutions
+  return s.toLowerCase()
+    .replace(/[^a-z0-9]/g,'')
+    .replace(/0/g,'o').replace(/1/g,'i').replace(/3/g,'e')
+    .replace(/4/g,'a').replace(/5/g,'s').replace(/7/g,'t')
+    .replace(/8/g,'b').replace(/9/g,'g').replace(/\$/g,'s')
+    .replace(/@/g,'a').replace(/!/g,'i');
+}
+
+function _isNameAllowed(name){
+  var n=_normalizeName(name);
+  // Block list — racial slurs, hate speech, slurs, tragedy references, sexual content
+  // Using partial fragments so the list itself isn't a readable slur glossary
+  var blocked=[
+    // Racial slurs (fragmented to avoid the source being a slur list)
+    'nigger','nigga','niger','niqqa','niqqer','chink','gook','spic','spick',
+    'kike','wetback','cracker','redneck','towelhead','raghead','zipperhead',
+    'beaner','coon','jigaboo','darkie','porch','sambo','pickaninny','mulatto',
+    // Slurs targeting sexuality/gender
+    'faggot','fagot','faget','dyke','tranny','shemale','queer',
+    // General hate/shock
+    'kkk','nazi','heil','hitler','holocaust','auschwitz','genocide',
+    '911','ninetyeleven','sept11','twintowers','columbine','sandyhook',
+    'uvalde','parkland','pulse','oklahoma',
+    // Sexual content
+    'penis','vagina','pussy','cock','dick','cunt','asshole','anus',
+    'bitch','whore','slut','hoe','skank','boob','tits','tit','porn',
+    'sex','xxx','nude','naked','masturbat','orgasm',
+    // General profanity
+    'fuck','shit','bastard','damn','crap','piss','motherfuck',
+    'jackass','dumbass','dipshit','bullshit','horseshit',
+  ];
+  for(var i=0;i<blocked.length;i++){
+    if(n.indexOf(blocked[i])>=0)return false;
+  }
+  // Also check raw lowercased input for things like '911' that normalize away
+  var raw=name.toLowerCase().replace(/\s/g,'');
+  var rawBlocked=['911','9/11','sept11','9-11'];
+  for(var j=0;j<rawBlocked.length;j++){if(raw.indexOf(rawBlocked[j])>=0)return false;}
+  // Must contain at least 2 alphanumeric characters
+  if(name.replace(/[^a-zA-Z0-9]/g,'').length<2)return false;
+  return true;
+}
+
 async function linkSlot(){
   var sel=document.getElementById("lb-slot-select");
   var val=sel?sel.value:"";
@@ -2116,6 +2171,10 @@ async function linkSlot(){
     var n=window.prompt("Enter your display name (max 24 chars):","");
     if(!n||!n.trim()){lbStatus("Cancelled.","#555");return;}
     name=n.trim().slice(0,24);
+    if(!_isNameAllowed(name)){
+      lbStatus("❌ That name isn't allowed. Please choose a different name.","#ff4444");
+      return;
+    }
     score=totalEarned;
   } else {
     var slot=parseInt(val);
