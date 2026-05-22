@@ -254,11 +254,11 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
       <div id="per-sec">$0.00/sec</div>
       <div id="hustle-tokens">⬡ 0 Hustle Tokens</div>
       <div id="prestige-preview"></div>
-      <div id="player-count" style="font-size:10px;color:#2a2a2a;margin-top:1px;"></div>
+      <div id="player-count" style="font-size:10px;color:#444;margin-top:1px;">🟢 checking...</div>
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v76</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v77</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -2233,11 +2233,15 @@ async function presencePing(){
     });
     // Update display
     var el=document.getElementById("player-count");
-    if(el)el.textContent=active+" online";
+    if(el)el.textContent="🟢 "+active+" online";
     // Write back (don't await — fire and forget to avoid blocking)
     fetch(LB_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({scores:data.scores||[],presence:presence,feedback:data.feedback})});
-  }catch(e){}
+      body:JSON.stringify({scores:data.scores||[],presence:presence})});
+  }catch(e){
+    // If fetch fails, just show 1 (ourselves)
+    var el=document.getElementById("player-count");
+    if(el)el.textContent="🟢 1 online";
+  }
 }
 
 // Ping on load and every 30s
