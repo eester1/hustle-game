@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v122</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v123</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1807,6 +1807,49 @@ function renderPerks(){
 })();
 
 var lastDirtyTick=0;
+
+// Offline progress — when tab becomes visible again, catch up on missed time
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden){
+    // Store time when tab was hidden
+    lastTime=Date.now();
+  } else {
+    // Tab became visible — calculate how long we were away
+    var now=Date.now();
+    var awayMs=now-lastTime;
+    lastTime=now;
+    if(awayMs<1000)return; // less than 1 second, ignore
+    var awaySecs=Math.min(awayMs/1000, 3600); // cap at 1 hour of catch-up
+    // Process in 1-second chunks to avoid one massive dt
+    var chunks=Math.floor(awaySecs);
+    var remainder=awaySecs-chunks;
+    // Process business income for the away time
+    var totalEarned2=0;
+    for(var i=0;i<businesses.length;i++){
+      var b=businesses[i];
+      if(b.owned<=0)continue;
+      var spd=Math.min(20,Math.max(1,perkEffects.bizSpeedMult*(Math.max(1,1+(perkEffects.bizSpeedBonus||0)-1))));
+      var cycles=Math.floor((b.timer+awaySecs*spd)/b.interval);
+      totalEarned2+=bizIncome(b)*cycles;
+      b.timer=(b.timer+awaySecs*spd)%b.interval;
+    }
+    // Add passive income
+    totalEarned2+=(perkEffects.basePassive||0)*awaySecs;
+    if(totalEarned2>0){
+      addMoney(totalEarned2);
+      var mins=Math.floor(awaySecs/60);
+      var label=mins>0?mins+"m "+(Math.floor(awaySecs%60))+"s":Math.floor(awaySecs)+"s";
+      toast("Welcome back! +"+fmt(totalEarned2)+" earned while away ("+label+")","#44ff88");
+    }
+    // Also tick cooldowns
+    if(frenzyCd>0)frenzyCd=Math.max(0,frenzyCd-awaySecs);
+    if(megaFrenzyCd>0)megaFrenzyCd=Math.max(0,megaFrenzyCd-awaySecs);
+    // Tick chain timer
+    if(chainActive&&!chainInProgress) chainTimerSecs=Math.min(chainMaxSecs,chainTimerSecs+awaySecs);
+    listsDirty=true;updateUI();
+  }
+});
+
 function loop(){
   var now=Date.now(),dt=Math.min((now-lastTime)/1000,0.1);
   lastTime=now;t+=dt;
