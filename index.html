@@ -249,7 +249,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v64</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v67</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -395,7 +395,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     <div class="help-section">
       <h3 style="color:#cc44ff">✨ Prestige</h3>
       <p>Prestige <b>resets</b> your money, businesses, upgrades, and perks — but keeps your Skill Tree nodes and earns you tokens.</p>
-      <p>Prestige <b>unlocks automatically</b> when you earn <b class="hl-purple">$1 Billion</b> total in a single run. No Skill Tree node required — just reach $1B.</p>
+      <p>Prestige <b>unlocks automatically</b> when your <b class="hl-purple">total all-time earnings reach $1 Billion</b> — this is NOT your current cash balance. It counts every dollar you've ever earned that run, even money you've already spent on businesses and upgrades.</p>
       <p>Each prestige earns tokens based on how much you made that run (see the <b class="hl-purple">⬡ Hustle Tokens</b> section for the full breakdown) and grants a <b class="hl-orange">permanent income multiplier</b> that stacks — prestige 1 = 1.5x, prestige 2 = 2.25x, etc.</p>
       <div class="help-tip">💡 The top bar shows your progress toward $1B before unlock, then shows "+X tokens" once unlocked. Wait until the token count is worth it before prestiging.</div>
     </div>
@@ -542,7 +542,7 @@ var frenzyUnlocked=false,megaFrenzyUnlocked=false,prestigeUnlocked=false,buyAllU
 var clickChainChance=0,clickChainCount=2; // click chain: chance to fire bonus auto-clicks
 var prestigeBaseMult=1.2; // base per-prestige multiplier — nerf from 1.5x to 1.2x
 var cashBonusMult=0;
-var bulkBuyCount=1; // how many of the same consumable to buy per click (Bulk Consumer upgrades increase this)
+var globalIncomeBonus=0; // additive % pool for income — all incomepct perks/nodes add here
 var consumableTierUnlocked=0; // 0=locked, 1=tier1 usable, 2=tier1+2, etc.
 var perkEffects={comboCap:8,comboTimerMult:1,luckyBoost:1,rainbowMult:1,costReduce:1,basePassive:0,bizSpeedMult:1};
 var cdReduceMult=1;
@@ -624,28 +624,27 @@ var upgrades=[
 var consumables=[
   // Tier 1 — cheap, weak
   {name:"Energy Drink", icon:"⚡",  desc:"1.5x clicks for 20s",              cost:50,    effect:"click3x",     effectDur:20, cooldown:30,  cdLeft:0,count:0,color:"#ffff44",tier:1},
-  {name:"Lucky Coin",   icon:"🪙",  desc:"Small random cash bonus",           cost:120,   effect:"lucky",       effectDur:0,  cooldown:45,  cdLeft:0,count:0,color:"#ffcc44",tier:1},
-  {name:"Megaphone",    icon:"📣",  desc:"3x income for 20s",                 cost:400,   effect:"income2x",    effectDur:20, cooldown:60,  cdLeft:0,count:0,color:"#ff8844",tier:1},
+  {name:"Lucky Coin",   icon:"🪙",  desc:"Small random cash bonus",           cost:120,   effect:"lucky",       effectDur:0,  cooldown:30,  cdLeft:0,count:0,color:"#ffcc44",tier:1},
+  {name:"Megaphone",    icon:"📣",  desc:"3x income for 20s",                 cost:400,   effect:"income2x",    effectDur:20, cooldown:30,  cdLeft:0,count:0,color:"#ff8844",tier:1},
   // Tier 2 — mid game
-  {name:"Speed Shot",   icon:"💊",  desc:"5x clicks for 15s",                 cost:1500,  effect:"click3x",     effectDur:15, cooldown:60,  cdLeft:0,count:0,color:"#ffff44",tier:2},
-  {name:"Time Warp",    icon:"⏰",  desc:"All businesses pay instantly",       cost:2000,  effect:"timewarp",    effectDur:0,  cooldown:120, cdLeft:0,count:0,color:"#aa44ff",tier:2},
-  {name:"Gold Rush",    icon:"🏆",  desc:"5x everything for 15s",             cost:3500,  effect:"gold",        effectDur:15, cooldown:90,  cdLeft:0,count:0,color:"#ffd700",tier:2},
-  {name:"Rainbow Boost",icon:"🌈",  desc:"RAINBOW MODE for 15s",              cost:5000,  effect:"rainbow",     effectDur:15, cooldown:90,  cdLeft:0,count:0,color:"#ff44ff",tier:2},
+  {name:"Speed Shot",   icon:"💊",  desc:"5x clicks for 15s",                 cost:1500,  effect:"click3x",     effectDur:15, cooldown:30,  cdLeft:0,count:0,color:"#ffff44",tier:2},
+  {name:"Time Warp",    icon:"⏰",  desc:"All businesses pay instantly",       cost:2000,  effect:"timewarp",    effectDur:0,  cooldown:30, cdLeft:0,count:0,color:"#aa44ff",tier:2},
+  {name:"Gold Rush",    icon:"🏆",  desc:"5x everything for 15s",             cost:3500,  effect:"gold",        effectDur:15, cooldown:30,  cdLeft:0,count:0,color:"#ffd700",tier:2},
+  {name:"Rainbow Boost",icon:"🌈",  desc:"RAINBOW MODE for 15s",              cost:5000,  effect:"rainbow",     effectDur:15, cooldown:30,  cdLeft:0,count:0,color:"#ff44ff",tier:2},
   // Tier 3 — late game
-  {name:"Adrenaline",   icon:"💉",  desc:"10x clicks for 20s",                cost:15000, effect:"adrenaline",  effectDur:20, cooldown:120, cdLeft:0,count:0,color:"#ff2244",tier:3},
-  {name:"Cloner",       icon:"🔮",  desc:"5x income for 30s",                 cost:25000, effect:"clone",       effectDur:30, cooldown:150, cdLeft:0,count:0,color:"#44ffff",tier:3},
-  {name:"Overclock",    icon:"🔋",  desc:"All businesses run 8x faster for 20s", cost:50000, effect:"overclock", effectDur:20, cooldown:180, cdLeft:0,count:0,color:"#88ff44",tier:3},
-  {name:"Jackpot",      icon:"🎰",  desc:"Random 10x–100x income burst",      cost:100000,effect:"jackpot",     effectDur:0,  cooldown:300, cdLeft:0,count:0,color:"#ffff44",tier:3},
+  {name:"Adrenaline",   icon:"💉",  desc:"10x clicks for 20s",                cost:15000, effect:"adrenaline",  effectDur:20, cooldown:30, cdLeft:0,count:0,color:"#ff2244",tier:3},
+  {name:"Cloner",       icon:"🔮",  desc:"5x income for 30s",                 cost:25000, effect:"clone",       effectDur:30, cooldown:30, cdLeft:0,count:0,color:"#44ffff",tier:3},
+  {name:"Overclock",    icon:"🔋",  desc:"All businesses run 8x faster for 20s", cost:50000, effect:"overclock", effectDur:20, cooldown:30, cdLeft:0,count:0,color:"#88ff44",tier:3},
+  {name:"Jackpot",      icon:"🎰",  desc:"Random 10x–100x income burst",      cost:100000,effect:"jackpot",     effectDur:0,  cooldown:30, cdLeft:0,count:0,color:"#ffff44",tier:3},
   // Tier 4 — endgame
-  {name:"Diamond Hands",icon:"💎",  desc:"25x income for 30s",                cost:500000,effect:"diamond",     effectDur:30, cooldown:180, cdLeft:0,count:0,color:"#88ddff",tier:4},
-  {name:"Time Crystal", icon:"🔷",  desc:"10x biz speed for 30s",             cost:1e6,   effect:"timecrystal", effectDur:30, cooldown:600, cdLeft:0,count:0,color:"#44ffff",tier:4},
-  {name:"Neon Storm",   icon:"🌩️", desc:"50x clicks + rainbow for 25s",      cost:2e7,   effect:"neonstorm",   effectDur:25, cooldown:300, cdLeft:0,count:0,color:"#ff88ff",tier:4},
+  {name:"Diamond Hands",icon:"💎",  desc:"25x income for 30s",                cost:500000,effect:"diamond",     effectDur:30, cooldown:60, cdLeft:0,count:0,color:"#88ddff",tier:4},
+  {name:"Time Crystal", icon:"🔷",  desc:"10x biz speed for 30s",             cost:1e6,   effect:"timecrystal", effectDur:30, cooldown:60, cdLeft:0,count:0,color:"#44ffff",tier:4},
+  {name:"Neon Storm",   icon:"🌩️", desc:"50x clicks + rainbow for 25s",      cost:2e7,   effect:"neonstorm",   effectDur:25, cooldown:60, cdLeft:0,count:0,color:"#ff88ff",tier:4},
   // Tier 5 — prestige-era only
-  {name:"Omega Warp",   icon:"🌌",  desc:"All businesses pay 100x instantly", cost:2e11,  effect:"omegawarp",   effectDur:0,  cooldown:3600,cdLeft:0,count:0,color:"#4488ff",tier:5},
-  {name:"Void Tap",     icon:"🕳️", desc:"Every auto-click earns 1000x for 15s", cost:5e11, effect:"voidtap",   effectDur:15, cooldown:1800,cdLeft:0,count:0,color:"#884fff",tier:5},
-  {name:"Business Frenzy",icon:"🏭",desc:"All income 50x for 20s",            cost:1e12,  effect:"bizfrenzy",   effectDur:20, cooldown:2400,cdLeft:0,count:0,color:"#ff8844",tier:5},
-  {name:"Combo Surge",  icon:"💫",  desc:"Instantly max your combo and lock it for 30s", cost:5e12, effect:"combosurge", effectDur:30, cooldown:2400,cdLeft:0,count:0,color:"#ffff88",tier:5},
-  {name:"Market Crash", icon:"📉",  desc:"Resets ALL consumable cooldowns instantly",     cost:1e8,  effect:"cdresetall", effectDur:0,  cooldown:900, cdLeft:0,count:0,color:"#ff4488",tier:5}
+  {name:"Omega Warp",   icon:"🌌",  desc:"All businesses pay 100x instantly", cost:2e11,  effect:"omegawarp",   effectDur:0,  cooldown:60,cdLeft:0,count:0,color:"#4488ff",tier:5},
+  {name:"Void Tap",     icon:"🕳️", desc:"Every auto-click earns 1000x for 15s", cost:5e11, effect:"voidtap",   effectDur:15, cooldown:60,cdLeft:0,count:0,color:"#884fff",tier:5},
+  {name:"Business Frenzy",icon:"🏭",desc:"All income 50x for 20s",            cost:1e12,  effect:"bizfrenzy",   effectDur:20, cooldown:60,cdLeft:0,count:0,color:"#ff8844",tier:5},
+  {name:"Combo Surge",  icon:"💫",  desc:"Instantly max your combo and lock it for 30s", cost:5e12, effect:"combosurge", effectDur:30, cooldown:60,cdLeft:0,count:0,color:"#ffff88",tier:5},
 ];
 
 var perks=[
@@ -682,20 +681,20 @@ var treeNodes=[
   {id:0, x:640,y:60,  name:"First Steps",      icon:"👣",  desc:"Unlock Frenzy button. +5% cash bonus.",                                    cost:3,    bought:false,req:[],          type:"unlock_frenzy",    color:"#ff4466"},
   {id:1, x:190,y:180, name:"Auto Clicker I",   icon:"🖱️",  desc:"Auto-clicks once every 3 seconds.",                                        cost:12,   bought:false,req:[0],          type:"autoclickI",       color:"#44aaff"},
   {id:2, x:370,y:180, name:"Combo Speed I",    icon:"🔥",  desc:"Combo builds 1.5x faster.",                                                cost:10,   bought:false,req:[0],          type:"combospeedI",      color:"#ff8844"},
-  {id:3, x:540,y:180, name:"Click Power I",    icon:"👊",  desc:"+1.5x to all click earnings.",                                               cost:10,   bought:false,req:[0],          type:"clickboost",val:1.5,  color:"#44ff88"},
+  {id:3, x:540,y:180, name:"Click Power I",    icon:"👊",  desc:"+50% to all click earnings.",                                                cost:10,   bought:false,req:[0],          type:"clickpct",  val:0.5,  color:"#44ff88"},
   {id:4, x:710,y:180, name:"Cash Bonus I",     icon:"💵",  desc:"+5% to all cash earned.",                                                 cost:10,   bought:false,req:[0],          type:"cashbonus",val:0.05, color:"#ffcc44"},
   {id:5, x:890,y:180, name:"Frenzy Boost I",   icon:"⚡",  desc:"Frenzy cooldown -30%. Frenzy lasts 2s longer.",                           cost:15,   bought:false,req:[0],          type:"frenzybuff",       color:"#ff4466"},
   {id:6, x:140, y:300, name:"Auto Clicker II",  icon:"🖱️",  desc:"Auto-clicks 3 times per second.",                                         cost:25,   bought:false,req:[1],          type:"autoclickII",      color:"#44aaff"},
   {id:7, x:270,y:300, name:"Auto Buyer",        icon:"🛒",  desc:"Buys cheapest business every 10s.",                                       cost:20,   bought:false,req:[1],          type:"autobuy",          color:"#44ff88"},
   {id:8, x:370,y:300, name:"Combo Speed II",   icon:"🔥",  desc:"Combo builds 2x faster total.",                                           cost:20,   bought:false,req:[2],          type:"combospeedII",     color:"#ff8844"},
-  {id:9, x:540,y:300, name:"Click Power II",   icon:"👊",  desc:"+2x to all click earnings.",                                              cost:25,   bought:false,req:[3],          type:"clickboost",val:2,  color:"#44ff88"},
+  {id:9, x:540,y:300, name:"Click Power II",   icon:"👊",  desc:"+100% to all click earnings.",                                             cost:25,   bought:false,req:[3],          type:"clickpct",  val:1.0,  color:"#44ff88"},
   {id:10,x:710,y:300, name:"Cash Bonus II",    icon:"💵",  desc:"+10% to all cash earned.",                                                cost:20,   bought:false,req:[4],          type:"cashbonus",val:0.10,color:"#ffcc44"},
   {id:11,x:890,y:300, name:"Frenzy Boost II",  icon:"⚡",  desc:"Frenzy cooldown halved total. Duration +4s total.",                       cost:25,   bought:false,req:[5],          type:"frenzybuff2",      color:"#ff4466"},
   {id:12,x:1070,y:300, name:"Biz Speed I",       icon:"⏩",  desc:"All businesses run 1.5x faster permanently.",                              cost:30,   bought:false,req:[0],          type:"bizspeednode",val:1.5,color:"#44ffcc"},
   {id:13,x:140, y:420, name:"Auto Clicker III", icon:"🖱️",  desc:"Auto-clicks 10 times per second.",                                        cost:40,   bought:false,req:[6],          type:"autoclickIII",     color:"#44aaff"},
   {id:14,x:270,y:420, name:"Token Miner I",    icon:"⬡",   desc:"Earn 1.2x tokens when you prestige.",                                       cost:50,   bought:false,req:[6,7],        type:"tokenmult",val:1.2,   color:"#cc44ff"},
   {id:15,x:370,y:420, name:"Auto Upgrade",     icon:"📦",  desc:"Buys cheapest upgrade every 15s.",                                        cost:30,   bought:false,req:[7],          type:"autoupgrade",      color:"#aa44ff"},
-  {id:16,x:540,y:420, name:"Click Power III",  icon:"👊",  desc:"+3x to all click earnings.",                                             cost:40,   bought:false,req:[9],          type:"clickboost",val:3, color:"#44ff88"},
+  {id:16,x:540,y:420, name:"Click Power III",  icon:"👊",  desc:"+200% to all click earnings.",                                            cost:40,   bought:false,req:[9],          type:"clickpct",  val:2.0,  color:"#44ff88"},
   {id:17,x:710,y:420, name:"Cash Bonus III",   icon:"💵",  desc:"+20% to all cash earned.",                                                cost:30,   bought:false,req:[10],         type:"cashbonus",val:0.20, color:"#ffcc44"},
   {id:18,x:890,y:420, name:"Mega Frenzy",      icon:"🔥",  desc:"Unlock Mega Frenzy button.",                                              cost:30,   bought:false,req:[11],         type:"unlock_mega",      color:"#ff8800"},
   {id:19,x:1070,y:420, name:"Biz Speed II",      icon:"⏩",  desc:"All businesses run 2x faster total.",                                    cost:50,  bought:false,req:[12],         type:"bizspeednode",val:2,color:"#44ffcc"},
@@ -745,7 +744,7 @@ var treeNodes=[
   {id:63,x:10,y:300,  name:"Consumables II",  icon:"🧪", desc:"Unlock Tier 2 consumables (Speed Shot, Time Warp, Gold Rush, Rainbow Boost).",cost:20, bought:false,req:[62], type:"consumable_tier",tierVal:2,color:"#ff8844"},
   {id:64,x:10,y:420,  name:"Consumables III", icon:"🧪", desc:"Unlock Tier 3 consumables (Adrenaline, Cloner, Overclock, Jackpot).",cost:60, bought:false,req:[63], type:"consumable_tier",tierVal:3,color:"#ff8844"},
   {id:65,x:10,y:540,  name:"Consumables IV",  icon:"🧪", desc:"Unlock Tier 4 consumables (Diamond Hands, Time Crystal, Neon Storm).",cost:200,bought:false,req:[64], type:"consumable_tier",tierVal:4,color:"#ff8844"},
-  {id:66,x:10,y:660,  name:"Consumables V",   icon:"🧪", desc:"Unlock Tier 5 consumables (Omega Warp, Void Tap, Business Frenzy, Market Crash, Combo Surge).",cost:800,bought:false,req:[65], type:"consumable_tier",tierVal:5,color:"#ff4444"},
+  {id:66,x:10,y:660,  name:"Consumables V",   icon:"🧪", desc:"Unlock Tier 5 consumables (Omega Warp, Void Tap, Business Frenzy, Combo Surge).",cost:800,bought:false,req:[65], type:"consumable_tier",tierVal:5,color:"#ff4444"},
   {id:67,x:790,y:60,  name:"Combo Strike",  icon:"🥊",  desc:"Unlock the combo multiplier — click repeatedly to build it up for bigger earnings.",cost:3,bought:false,req:[0],type:"combo_unlock",color:"#ffcc44"},
   {id:68,x:790,y:180, name:"Combo King",     icon:"👑", desc:"Max combo cap raised to 15x. Works best with high combo speed.", cost:8,  bought:false,req:[67], type:"combocap",   val:15, color:"#ffcc44"},
   {id:69,x:790,y:300, name:"Time is Money",  icon:"⏳", desc:"Combo window lasts 3x longer before it starts to decay.",        cost:12, bought:false,req:[68], type:"combotimer", val:3,  color:"#ffcc44"},
@@ -768,7 +767,7 @@ function comboWindowForLevel(c){
   }
 }
 function bizCost(b){return Math.floor(b.baseCost*Math.pow(1.15,b.owned)*perkEffects.costReduce);}
-function bizIncome(b){return b.baseIncome*b.owned*b.mult*incomeBoost*globalMult*prestigeMult;}
+function bizIncome(b){return b.baseIncome*b.owned*b.mult*incomeBoost*globalMult*prestigeMult*(1+globalIncomeBonus);}
 function calcPerSec(){var tot=perkEffects.basePassive;for(var i=0;i<businesses.length;i++)if(businesses[i].owned>0)tot+=bizIncome(businesses[i])/businesses[i].interval;perSec=tot;}
 function rainbowColor(t2){return"hsl("+((t2*90)%360)+",100%,65%)";}
 
@@ -781,7 +780,7 @@ function addMoney(amt){
     toast("MILESTONE: "+fmt(milestones[milestoneIdx])+"!","#ffcc44");
     if(milestones[milestoneIdx]>=1e9&&!prestigeUnlocked){
       prestigeUnlocked=true;
-      toast("🌟 PRESTIGE UNLOCKED! You've earned $1B!","#cc44ff");
+      toast("🌟 PRESTIGE UNLOCKED! Total earned: $1B!","#cc44ff");
       spawnRainbowBurst(W/2,H/2,35);
     }
     milestoneIdx++;spawnShockwave(W/2,H/2);
@@ -842,7 +841,7 @@ function activateMegaFrenzy(){if(!megaFrenzyUnlocked||megaFrenzyCd>0||megaFrenzy
 function tokensForPrestige(earned){return Math.floor(8*Math.cbrt(earned/1e9));}
 
 function prestige(){
-  if(!prestigeUnlocked){toast("Earn $1B total to unlock Prestige!","#cc44ff");return;}
+  if(!prestigeUnlocked){toast("Need $1B total earned (not current cash) to unlock Prestige!","#cc44ff");return;}
   if(totalEarned<1e7){toast("Need $10M total earned to prestige!","#cc44ff");return;}
   var gained=Math.floor(tokensForPrestige(totalEarned)*prestigeTokenMult);
   if(gained<=0){toast("Need more earnings for tokens!","#cc44ff");return;}
@@ -858,6 +857,7 @@ function prestige(){
   comboUnlocked=false;document.getElementById("combo-zone").style.display="none";
   for(var i=0;i<consumables.length;i++)consumables[i].cdLeft=0;
   clickValue=1;clickMult=1;incomeBoost=1;globalMult=1;combo=1;comboTimer=0;
+  globalIncomeBonus=0;
   if(comboMaxActive){comboMaxActive=false;removeEffect("🔥 MAX COMBO! 3x ALL");}
   cashBonusMult=0;
   // Re-apply tree bonuses that survive prestige
@@ -865,6 +865,8 @@ function prestige(){
     if(treeNodes[i].bought){
       if(treeNodes[i].type==="cashbonus")cashBonusMult+=treeNodes[i].val;
       if(treeNodes[i].type==="clickboost")clickValue*=treeNodes[i].val;
+      if(treeNodes[i].type==="clickpct")clickMult*=(1+treeNodes[i].val);
+      if(treeNodes[i].type==="incomemult")globalIncomeBonus+=(treeNodes[i].val-1);
       if(treeNodes[i].type==="consumable_tier")consumableTierUnlocked=Math.max(consumableTierUnlocked,treeNodes[i].tierVal);
       if(treeNodes[i].type==="combo_unlock"){comboUnlocked=true;document.getElementById("combo-zone").style.display="flex";}
       if(treeNodes[i].type==="combocap"){perkEffects.comboCap=treeNodes[i].val;}
@@ -958,7 +960,7 @@ function buyPerk(idx){
   if(p.type==="upgradediscount"){for(var j=0;j<upgrades.length;j++)if(!upgrades[j].bought)upgrades[j].cost=Math.floor(upgrades[j].cost*p.val);}
   if(p.type==="clickpct")      clickMult*=(1+p.val);           // additive % stacked as multiplier
   if(p.type==="goldtouch")     clickValue*=p.val;              // true multiplier (only Click Master)
-  if(p.type==="incomepct")     {for(var i=0;i<businesses.length;i++)businesses[i].mult*=(1+p.val);}
+  if(p.type==="incomepct")     {globalIncomeBonus+=p.val;}
   if(p.type==="empireall")     {for(var i=0;i<businesses.length;i++)businesses[i].mult*=p.val;}
   if(p.type==="bizspdpct")     perkEffects.bizSpeedMult*=(1+p.val);
   if(p.type==="bizspeed")      perkEffects.bizSpeedMult*=p.val;
@@ -1030,7 +1032,7 @@ function buyAllPerks(){
       if(p.type==="upgradediscount"){for(var k=0;k<upgrades.length;k++)if(!upgrades[k].bought)upgrades[k].cost=Math.floor(upgrades[k].cost*p.val);}
       if(p.type==="clickpct")      clickMult*=(1+p.val);
       if(p.type==="goldtouch")     clickValue*=p.val;
-      if(p.type==="incomepct")     {for(var j=0;j<businesses.length;j++)businesses[j].mult*=(1+p.val);}
+      if(p.type==="incomepct")     {globalIncomeBonus+=p.val;}
       if(p.type==="empireall")     {for(var j=0;j<businesses.length;j++)businesses[j].mult*=p.val;}
       if(p.type==="bizspdpct")     perkEffects.bizSpeedMult*=(1+p.val);
       if(p.type==="frenzypct")     frenzyCdMax*=0.60;
@@ -1092,6 +1094,7 @@ function applyTreeNode(node){
   if(node.type==="unlock_frenzy"){frenzyUnlocked=true;cashBonusMult+=0.05;}
   if(node.type==="cashbonus"){cashBonusMult+=node.val;}
   if(node.type==="clickboost"){clickValue*=node.val;}
+  if(node.type==="clickpct"){clickMult*=(1+node.val);}  // additive % pool shared with perks
   if(node.type==="combospeedI"){}   // handled dynamically in handleClick
   if(node.type==="combospeedII"){}  // handled dynamically in handleClick
   if(node.type==="autoclickI"){autoClickRate=Math.max(autoClickRate,1/3);}
@@ -1151,7 +1154,7 @@ function applyTreeNode(node){
   if(node.type==="tokenmult"){prestigeTokenMult*=node.val;toast("Prestige token yield x"+node.val+"!","#cc44ff");}
   if(node.type==="autofrenzy"){autoFrenzy=true;}
   if(node.type==="automegafrenzy"){autoMegaFrenzy=true;}
-  if(node.type==="incomemult"){for(var i=0;i<businesses.length;i++)businesses[i].mult*=node.val;calcPerSec();}
+  if(node.type==="incomemult"){globalIncomeBonus+=(node.val-1);calcPerSec();toast("+"+Math.round((node.val-1)*100)+"% business income bonus!","#44ff88");}
   if(node.type==="stackup"){bulkBuyCount=Math.max(bulkBuyCount,node.val);toast("Bulk buy: "+bulkBuyCount+"x per click!","#ff88cc");}
   if(node.type==="cdreduce"){cdReduceMult*=node.val;toast("Consumable cooldowns reduced!","#44ffcc");}
   if(node.type==="godmode"){
@@ -1318,13 +1321,13 @@ function updateUI(){
   mc.textContent=fmt(money);
   mc.style.color=rainbowActive?rainbowColor(t):(megaFrenzyActive?"#ff8800":"#44ff88");
   mc.style.textShadow=rainbowActive?"0 0 18px "+rainbowColor(t):"none";
-  document.getElementById("net-worth").textContent="Total: "+fmt(totalEarned);
+  document.getElementById("net-worth").textContent="Total earned: "+fmt(totalEarned);
   document.getElementById("per-sec").textContent=fmt(perSec*(1+cashBonusMult))+"/sec"+(prestigeMult>1?" [x"+prestigeMult.toFixed(1)+"]":"");
   document.getElementById("hustle-tokens").textContent="⬡ "+Math.floor(hustleTokens)+" Hustle Tokens";
   var preview=document.getElementById("prestige-preview");
   if(!prestigeUnlocked){
     var pct=Math.min(100,(totalEarned/1e9)*100).toFixed(1);
-    preview.textContent="Prestige unlocks at $1B ("+pct+"%)";
+    preview.textContent="Prestige: earn $1B total ("+pct+"%) — not current cash";
     preview.style.color="#555";
   } else {
     var wouldGain=Math.floor(tokensForPrestige(totalEarned)*prestigeTokenMult);
@@ -1332,7 +1335,7 @@ function updateUI(){
       preview.textContent="Prestige now: +"+wouldGain+"⬡ token"+(wouldGain!==1?"s":"");
       preview.style.color="#cc44ff";
     } else {
-      preview.textContent="Reach $10M to prestige (+8⬡ at $1B, cube-root scaling)";
+      preview.textContent="Earn $10M total earned to prestige";
       preview.style.color="#555";
     }
   }
@@ -1626,6 +1629,7 @@ function saveState(){
     megaFrenzyCd:megaFrenzyCd, megaFrenzyCdMax:megaFrenzyCdMax,
     clickValue:clickValue, clickMult:clickMult, incomeBoost:incomeBoost,
     globalMult:globalMult, cashBonusMult:cashBonusMult, cdReduceMult:cdReduceMult,
+    globalIncomeBonus:globalIncomeBonus,
     bulkBuyCount:bulkBuyCount, autoClickRate:autoClickRate,
     autoBuyActive:autoBuyActive, autoUpgradeActive:autoUpgradeActive,
     autoFrenzy:autoFrenzy, autoMegaFrenzy:autoMegaFrenzy,
@@ -1658,6 +1662,7 @@ function loadState(s){
   clickValue=s.clickValue||1; clickMult=s.clickMult||1;
   incomeBoost=s.incomeBoost||1; globalMult=s.globalMult||1;
   cashBonusMult=s.cashBonusMult||0; cdReduceMult=s.cdReduceMult||1;
+  globalIncomeBonus=s.globalIncomeBonus||0;
   bulkBuyCount=s.bulkBuyCount||1; autoClickRate=s.autoClickRate||0;
   autoBuyActive=!!s.autoBuyActive; autoUpgradeActive=!!s.autoUpgradeActive;
   autoFrenzy=!!s.autoFrenzy; autoMegaFrenzy=!!s.autoMegaFrenzy;
