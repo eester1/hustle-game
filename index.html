@@ -282,7 +282,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v83</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v84</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1496,7 +1496,7 @@ function renderBizList(){
   var html="";
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i],cost=bizCost(b),can=money>=cost;
-    var spd=Math.min(10,(perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)-1)),prog=b.owned>0?(b.timer/(b.interval/spd))*100:0;
+    var spd=Math.min(10,(perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)-1)),prog=b.owned>0?(b.timer/(b.interval/Math.max(0.01,spd)))*100:0;
     var maxN=can?Math.floor(money/cost):0;
     var ttBody="Earns "+fmt(b.baseIncome)+" per "+b.interval+"s per unit owned. Auto-pays on its own timer.";
     var ttHint=b.owned>0?"Currently earning "+fmt(bizIncome(b))+" per payout ("+b.owned+" owned).":"Buy one to start earning passive income.";
@@ -1506,7 +1506,7 @@ function renderBizList(){
     html+='</div><div class="biz-right">';
     if(buyAllUnlocked&&can&&maxN>1)html+='<button class="biz-max-btn" onclick="event.stopPropagation();buyMaxBiz('+i+')">Max('+maxN+')</button>';
     html+='<div class="biz-cost" style="color:'+(can?"#44ff88":"#443333")+'">'+fmt(cost)+'</div>';
-    if(b.owned>0)html+='<div class="biz-income">'+fmt(bizIncome(b))+'/'+(b.interval/spd).toFixed(1)+'s</div>';
+    if(b.owned>0){var cycleTime=b.interval/Math.max(0.01,spd);var cycleStr=isFinite(cycleTime)&&cycleTime>0?cycleTime.toFixed(1)+"s":"s";html+='<div class="biz-income">'+fmt(bizIncome(b))+'/'+cycleStr+'</div>';}
     html+='</div></div>';
   }
   document.getElementById("biz-list").innerHTML=html;
@@ -1732,7 +1732,7 @@ function loop(){
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i];
     if(b.owned>0&&bizBars[i]){
-      var spd=Math.min(10,(perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)-1));
+      var spd=Math.min(10,Math.max(0.01,(perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)-1)));
       bizBars[i].style.width=Math.min(100,(b.timer/(b.interval/spd))*100)+"%";
     }
   }
