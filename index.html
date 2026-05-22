@@ -249,7 +249,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v72</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v73</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -503,7 +503,15 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
       </div>
       <div id="lb-linked-info" style="font-size:11px;color:#555;margin-top:6px;"></div>
       <div id="lb-remove-row" style="display:none;margin-top:6px;">
-        <button class="save-action-btn red" style="width:100%;padding:6px;font-size:11px;" onclick="removeMyEntry()">🗑️ Remove My Entry from Leaderboard</button>
+        <button class="save-action-btn red" style="width:100%;padding:6px;font-size:11px;" onclick="confirmRemoveEntry()">🗑️ Remove My Entry from Leaderboard</button>
+        <div id="lb-remove-confirm" style="display:none;background:#1a0000;border:1px solid #ff444460;border-radius:6px;padding:10px;margin-top:6px;">
+          <div style="font-size:11px;color:#ff6666;font-weight:bold;margin-bottom:6px;">⚠️ Are you sure?</div>
+          <div style="font-size:11px;color:#888;margin-bottom:8px;">This will permanently remove your score from the leaderboard. You can re-link at any time.</div>
+          <div style="display:flex;gap:8px;">
+            <button class="save-action-btn red" style="flex:1;padding:5px;" onclick="removeMyEntry()">Yes, remove it</button>
+            <button class="save-action-btn" style="flex:1;padding:5px;" onclick="cancelRemoveEntry()">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
     <div id="lb-status"></div>
@@ -1616,7 +1624,7 @@ function loop(){
 }
 
 // ── SAVE / LOAD SYSTEM ──
-var SAVE_KEY_PREFIX = "hustlegame_save_";
+var lastUsedSlot=0; // tracks which slot was last manually saved to
 var NUM_SLOTS = 5;
 var saveMsg_timer = null;
 
@@ -1716,6 +1724,8 @@ function saveToSlot(slot){
   try{
     var data=JSON.stringify(saveState());
     localStorage.setItem(slotKey(slot),data);
+    lastUsedSlot=slot;
+    localStorage.setItem(SAVE_KEY_PREFIX+"lastslot",slot);
     showSaveMsg("✓ Saved to Slot "+slot+"!","#44ff88");
     renderSaveSlots();
   }catch(e){ showSaveMsg("Save failed: "+e.message,"#ff4444"); }
@@ -2182,6 +2192,13 @@ function updateLinkedInfo(){
   }
 }
 
+function confirmRemoveEntry(){
+  document.getElementById("lb-remove-confirm").style.display="block";
+}
+function cancelRemoveEntry(){
+  document.getElementById("lb-remove-confirm").style.display="none";
+}
+
 async function removeMyEntry(){
   if(!lbLinkedName){lbStatus("No linked entry to remove.","#ff4444");return;}
   lbStatus("Removing...","#555");
@@ -2197,6 +2214,7 @@ async function removeMyEntry(){
   if(ok){
     lbLinkedSlot=null;lbLinkedName=null;
     localStorage.removeItem(LB_LINK_STORE);
+    document.getElementById("lb-remove-confirm").style.display="none";
     lbStatus("✓ Entry removed from leaderboard.","#44ff88");
     updateLinkedInfo();
     loadLeaderboard();
@@ -2425,12 +2443,18 @@ var autosaveInterval=setInterval(function(){
   try{
     var data=JSON.stringify(saveState());
     localStorage.setItem(SAVE_KEY_PREFIX+"autosave",data);
+    // Also update the last manually used slot so it stays current
+    var slot=lastUsedSlot||parseInt(localStorage.getItem(SAVE_KEY_PREFIX+"lastslot")||"0");
+    if(slot>=1&&slot<=NUM_SLOTS){
+      localStorage.setItem(slotKey(slot),data);
+    }
   }catch(e){}
   lbAutoUpdate(); // also push linked slot score to leaderboard
 },60000);
 
 // Restore autosave on startup — always load it since it's the most recent session state
 (function(){
+  lastUsedSlot=parseInt(localStorage.getItem(SAVE_KEY_PREFIX+"lastslot")||"0");
   var auto=localStorage.getItem(SAVE_KEY_PREFIX+"autosave");
   if(auto){
     try{
