@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; background: #0a0a0a; overflow: hidden; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #fff; }
+canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: none; }
+#ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; }
+#topbar { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: rgba(0,0,0,0.92); border-bottom: 1px solid #1a1a1a; gap: 8px; flex-shrink: 0; }
+#money-display { font-size: 20px; font-weight: bold; color: #44ff88; }
+#net-worth { font-size: 11px; color: #555; margin-top: 1px; }
+#per-sec { font-size: 11px; color: #ffcc44; }
+#hustle-tokens { font-size: 11px; color: #cc44ff; margin-top: 1px; }
+#prestige-preview { font-size: 10px; color: #884ab0; margin-top: 1px; }
+#right-hud { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+#level-display { font-size: 12px; color: #44aaff; font-weight: bold; }
+#xp-bar-wrap { width: 90px; height: 4px; background: #1a1a1a; border-radius: 3px; margin-left: auto; overflow: hidden; }
+#xp-bar { height: 4px; border-radius: 3px; width: 0%; }
+#top-right-btns { display: flex; align-items: center; gap: 5px; }
+#milestone-bar { background: rgba(0,0,0,0.8); padding: 4px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #111; flex-shrink: 0; }
+#milestone-text { font-size: 11px; color: #555; white-space: nowrap; }
+#milestone-progress-wrap { flex: 1; height: 4px; background: #111; border-radius: 2px; overflow: hidden; }
+#milestone-progress { height: 4px; background: #ffcc44; border-radius: 2px; }
+#milestone-goal { font-size: 11px; color: #ffcc44; white-space: nowrap; }
+#mid-area { flex: 1; display: flex; align-items: center; justify-content: center; gap: 20px; overflow: hidden; }
+#left-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#frenzy-btn { width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 2px solid #555; background: #111; cursor: not-allowed; opacity: 0.4; transition: all 0.2s; }
+#frenzy-btn.unlocked { border-color: #ff4466; background: radial-gradient(circle at 35% 35%, #3a1020, #150808); cursor: pointer; opacity: 1; }
+#frenzy-btn.unlocked:active { transform: scale(0.9); }
+#frenzy-cd { font-size: 11px; color: #555; text-align: center; }
+#mega-frenzy-btn { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid #555; background: #111; cursor: not-allowed; opacity: 0.4; transition: all 0.2s; }
+#mega-frenzy-btn.unlocked { border-color: #ff8800; background: radial-gradient(circle at 35% 35%, #3a2000, #150a00); cursor: pointer; opacity: 1; }
+#mega-frenzy-btn.unlocked:active { transform: scale(0.9); }
+#mega-cd { font-size: 11px; color: #555; text-align: center; }
+#click-zone { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+#big-btn { width: 110px; height: 110px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 3px solid #44ff88; background: radial-gradient(circle at 35% 35%, #1a4a2a, #0a1a10); transition: transform 0.07s, box-shadow 0.2s; }
+#big-btn:active { transform: scale(0.9); }
+#click-label { font-size: 11px; color: #44ff88; letter-spacing: 1px; font-weight: 600; }
+#click-value { font-size: 11px; color: #555; }
+#combo-zone { display: none; flex-direction: column; align-items: center; gap: 3px; }
+#combo-display { font-size: 24px; font-weight: bold; color: #888; transition: all 0.1s; }
+#combo-label { font-size: 10px; color: #555; letter-spacing: 1px; }
+#combo-bar-wrap { width: 54px; height: 4px; background: #1a1a1a; border-radius: 2px; }
+#combo-bar { height: 4px; border-radius: 2px; width: 100%; background: #ffcc44; }
+#right-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#prestige-btn { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid #555; background: #111; cursor: not-allowed; opacity: 0.4; transition: all 0.2s; }
+#prestige-btn.unlocked { border-color: #cc44ff; background: radial-gradient(circle at 35% 35%, #2a0a3a, #0d0515); cursor: pointer; opacity: 1; }
+#prestige-btn.unlocked:active { transform: scale(0.9); }
+#prestige-label { font-size: 11px; color: #555; text-align: center; }
+#prestige-count { font-size: 11px; color: #884ab0; text-align: center; }
+#tree-toggle { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid #44aaff; background: radial-gradient(circle at 35% 35%, #0a1a3a, #050a15); cursor: pointer; transition: transform 0.1s; }
+#tree-toggle:active { transform: scale(0.9); }
+#tree-label { font-size: 11px; color: #44aaff; text-align: center; }
+#active-effects { position: fixed; top: 88px; right: 8px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; z-index: 100; }
+.effect-pill { background: rgba(0,0,0,0.88); border: 1px solid #2a2a2a; border-radius: 8px; padding: 3px 9px; font-size: 11px; display: flex; align-items: center; gap: 4px; }
+.effect-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+#toast-wrap { position: fixed; top: 88px; left: 8px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; max-width: 220px; z-index: 100; }
+.toast { background: rgba(0,0,0,0.92); border: 1px solid #2a2a2a; border-radius: 5px; padding: 5px 11px; font-size: 11px; animation: tin 0.2s ease; }
+@keyframes tin { from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);} }
+#bottom-panel { height: 210px; flex-shrink: 0; background: rgba(0,0,0,0.92); border-top: 1px solid #1a1a1a; display: flex; }
+.panel { flex: 1; overflow-y: auto; padding: 7px 9px; border-right: 1px solid #111; }
+.panel:last-child { border-right: none; }
+.panel::-webkit-scrollbar { width: 3px; } .panel::-webkit-scrollbar-thumb { background: #222; }
+.panel-title { font-size: 11px; color: #555; letter-spacing: 2px; margin-bottom: 6px; text-transform: uppercase; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.buy-all-btn { font-size: 9px; color: #44ffcc; background: #001a15; border: 1px solid #44ffcc44; border-radius: 4px; padding: 2px 7px; cursor: pointer; letter-spacing: 0; text-transform: none; font-weight: 500; transition: background 0.1s; white-space: nowrap; font-family: inherit; }
+.buy-all-btn:hover { background: #003325; }
+.biz-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; background: #0d0d0d; border-radius: 6px; padding: 5px 7px; border: 1px solid #181818; cursor: pointer; transition: background 0.1s; }
+.biz-row:hover { background: #141414; }
+.biz-icon { font-size: 15px; width: 22px; text-align: center; }
+.biz-info { flex: 1; }
+.biz-name { font-size: 11px; font-weight: 600; }
+.biz-owned { font-size: 10px; color: #555; }
+.biz-bar-wrap { height: 3px; background: #151515; border-radius: 2px; margin-top: 3px; overflow: hidden; }
+.biz-bar { height: 3px; border-radius: 2px; }
+.biz-right { text-align: right; }
+.biz-cost { font-size: 11px; font-weight: bold; }
+.biz-income { font-size: 10px; color: #ffcc44; }
+.biz-max-btn { font-size: 9px; color: #44ffcc; background: #001a15; border: 1px solid #44ffcc44; border-radius: 3px; padding: 1px 5px; cursor: pointer; font-family: inherit; transition: background 0.1s; }
+.biz-max-btn:hover { background: #003325; }
+.biz-row.cant-afford { opacity: 0.4; cursor: default; }
+.upg-btn { width: 100%; background: #0d0d0d; border: 1px solid #181818; color: #bbb; padding: 5px 7px; border-radius: 5px; font-size: 11px; cursor: pointer; text-align: left; margin-bottom: 4px; font-family: inherit; }
+.upg-btn:hover:not(:disabled) { background: #141414; }
+.upg-btn:disabled { opacity: 0.3; cursor: default; }
+.upg-cost { color: #44ff88; font-size: 10px; display: block; margin-top: 2px; }
+.upg-bought { border-color: #44ff8820; color: #44ff8840; }
+.item-card { background: #0d0d0d; border: 1px solid #181818; border-radius: 6px; padding: 6px 7px; margin-bottom: 4px; cursor: pointer; position: relative; }
+.item-card:hover:not(.cant-afford):not(.on-cooldown) { background: #141414; }
+.item-header { display: flex; justify-content: space-between; align-items: center; }
+.item-name { font-size: 11px; font-weight: 600; }
+.item-cost { font-size: 11px; font-weight: bold; }
+.item-desc { font-size: 10px; color: #666; margin-top: 2px; }
+.item-meta { font-size: 10px; color: #888; margin-top: 2px; display: flex; justify-content: space-between; }
+.item-card.cant-afford { opacity: 0.35; cursor: default; }
+.item-card.on-cooldown { opacity: 0.5; cursor: not-allowed; }
+.item-cd-bar { height: 3px; background: #222; border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.item-cd-fill { height: 3px; border-radius: 2px; transition: width 0.5s; }
+.item-stack { font-size: 10px; color: #cc44ff; margin-top: 2px; }
+.perk-card { background: #0d0d0d; border: 1px solid #181818; border-radius: 6px; padding: 6px 7px; margin-bottom: 4px; cursor: pointer; }
+.perk-card:hover:not(.perk-owned) { background: #141414; }
+.perk-card.perk-owned { border-color: #44aaff20; opacity: 0.5; cursor: default; }
+.perk-name { font-size: 11px; font-weight: 600; color: #44aaff; }
+.perk-desc { font-size: 10px; color: #666; margin-top: 2px; }
+.perk-cost { font-size: 11px; margin-top: 3px; }
+#rainbow-overlay { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+#prestige-overlay { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(200,100,255,0.35), transparent); transition: opacity 1s; }
+
+/* Save / Load system */
+#save-btn { background: #111; border: 1px solid #333; color: #888; width: 24px; height: 24px; border-radius: 4px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
+#save-btn:hover { background: #1a1a1a; border-color: #44ff88; }
+#lb-btn { background: #111; border: 1px solid #333; color: #888; width: 24px; height: 24px; border-radius: 4px; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
+#lb-btn:hover { background: #1a1a1a; border-color: #ffcc44; }
+#save-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 10002; display: none; flex-direction: column; align-items: center; justify-content: center; }
+#save-modal.open { display: flex; }
+#save-box { background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 10px; padding: 20px 24px; width: 480px; max-width: 96vw; max-height: 90vh; overflow-y: auto; }
+#save-box h2 { font-size: 16px; color: #44ff88; margin-bottom: 16px; }
+.save-name-input { background:#0a0a0a; border:1px solid #333; color:#fff; padding:3px 7px; border-radius:4px; font-size:11px; font-family:inherit; width:120px; }
+.save-name-input:focus { outline:none; border-color:#44aaff; }
+/* Leaderboard */
+#lb-modal { position:fixed;inset:0;background:rgba(0,0,0,0.97);z-index:10003;display:none;flex-direction:column;align-items:center;justify-content:center; }
+#lb-modal.open { display:flex; }
+#lb-box { background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;padding:22px 26px;width:460px;max-width:96vw;max-height:88vh;overflow-y:auto; }
+#lb-box h2 { font-size:16px;color:#ffcc44;margin-bottom:4px; }
+#lb-subtitle { font-size:11px;color:#555;margin-bottom:14px; }
+.lb-row { display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #111;font-size:12px; }
+.lb-rank { width:26px;text-align:center;color:#666;font-weight:bold;flex-shrink:0; }
+.lb-rank.gold { color:#ffd700; }
+.lb-rank.silver { color:#aaa; }
+.lb-rank.bronze { color:#cd7f32; }
+.lb-name { flex:1;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.lb-score { color:#44ff88;font-weight:bold;flex-shrink:0; }
+.lb-you { background:#0a1a0a;border-radius:4px;margin:-2px -4px;padding:2px 4px; }
+#lb-submit-row { margin-top:14px;display:flex;gap:8px; }
+#lb-name-input { flex:1;background:#0a0a0a;border:1px solid #333;color:#fff;padding:6px 10px;border-radius:4px;font-size:12px;font-family:inherit; }
+#lb-name-input:focus { outline:none;border-color:#ffcc44; }
+#lb-status { font-size:11px;color:#555;min-height:16px;margin-top:6px; }
+#lb-close-btn { width:100%;margin-top:12px;background:#1a1a1a;border:1px solid #333;color:#888;padding:8px;border-radius:5px;font-size:12px;cursor:pointer;font-family:inherit; }
+#lb-close-btn:hover { background:#252525;color:#fff; }
+.save-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+.save-slot-label { font-size: 12px; color: #888; width: 60px; flex-shrink: 0; }
+.save-slot-info { flex: 1; font-size: 11px; color: #555; }
+.save-slot-info.filled { color: #aaa; }
+.save-action-btn { background: #141414; border: 1px solid #2a2a2a; color: #aaa; padding: 4px 10px; border-radius: 4px; font-size: 10px; cursor: pointer; font-family: inherit; transition: background 0.1s; white-space: nowrap; }
+.save-action-btn:hover { background: #1e1e1e; color: #fff; }
+.save-action-btn.green { border-color: #44ff8840; color: #44ff88; }
+.save-action-btn.green:hover { background: #001a0a; }
+.save-action-btn.blue { border-color: #44aaff40; color: #44aaff; }
+.save-action-btn.blue:hover { background: #000d1a; }
+.save-action-btn.red { border-color: #ff444440; color: #ff4444; }
+.save-action-btn.red:hover { background: #1a0000; }
+#save-close-btn { width: 100%; margin-top: 14px; background: #1a1a1a; border: 1px solid #333; color: #888; padding: 8px; border-radius: 5px; font-size: 12px; cursor: pointer; font-family: inherit; }
+#save-close-btn:hover { background: #252525; color: #fff; }
+#save-msg { font-size: 11px; color: #44ff88; text-align: center; min-height: 18px; margin-top: 6px; }
+/* Help button */
+#help-btn { background: #111; border: 1px solid #333; color: #888; width: 24px; height: 24px; border-radius: 50%; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; font-weight: bold; }
+#help-btn:hover { background: #1a1a1a; border-color: #44aaff; color: #44aaff; }
+
+/* Global tooltip */
+#g-tooltip { position: fixed; background: rgba(5,5,5,0.97); border: 1px solid #2a2a2a; border-radius: 7px; padding: 9px 12px; pointer-events: none; display: none; z-index: 9998; max-width: 240px; line-height: 1.5; }
+#g-tooltip .gt-name { font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+#g-tooltip .gt-body { font-size: 11px; color: #aaa; }
+#g-tooltip .gt-tag { font-size: 10px; margin-top: 5px; padding: 2px 7px; border-radius: 4px; display: inline-block; }
+.gt-click { background: #1a1a00; color: #ffff44; }
+.gt-income { background: #001a0a; color: #44ff88; }
+.gt-both { background: #1a0a00; color: #ffd700; }
+.gt-passive { background: #0a001a; color: #cc44ff; }
+#g-tooltip .gt-hint { font-size: 10px; color: #555; margin-top: 5px; border-top: 1px solid #1a1a1a; padding-top: 5px; }
+
+/* Help modal */
+#help-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 10001; display: none; flex-direction: column; }
+#help-modal.open { display: flex; }
+#help-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid #1a1a1a; background: #050505; flex-shrink: 0; }
+#help-modal-header h2 { font-size: 17px; color: #44aaff; }
+#help-close { background: #1a1a1a; border: 1px solid #333; color: #aaa; padding: 6px 16px; border-radius: 5px; cursor: pointer; font-size: 13px; font-family: inherit; }
+#help-close:hover { background: #252525; color: #fff; }
+#help-body { flex: 1; overflow-y: auto; padding: 18px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-content: start; }
+@media (max-width: 600px) { #help-body { grid-template-columns: 1fr; } }
+.help-section { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 9px; padding: 14px 16px; }
+.help-section h3 { font-size: 13px; font-weight: bold; margin-bottom: 9px; letter-spacing: 1px; text-transform: uppercase; }
+.help-section p { font-size: 12px; color: #888; line-height: 1.75; margin-bottom: 5px; }
+.help-section p:last-child { margin-bottom: 0; }
+.help-section b { color: #ccc; }
+.hl-green { color: #44ff88; }
+.hl-yellow { color: #ffcc44; }
+.hl-purple { color: #cc44ff; }
+.hl-blue { color: #44aaff; }
+.hl-red { color: #ff4466; }
+.hl-orange { color: #ff8800; }
+.help-tip { background: #0d0d00; border-left: 3px solid #ffcc44; padding: 6px 10px; border-radius: 0 5px 5px 0; font-size: 11px; color: #999; line-height: 1.65; margin-top: 7px; }
+
+/* ── SKILL TREE MODAL ── */
+#tree-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.97); z-index: 9999; display: none; flex-direction: column; }
+#tree-modal.open { display: flex; }
+#tree-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-bottom: 1px solid #1a1a1a; background: #050505; flex-shrink: 0; }
+#tree-header-title { font-size: 15px; font-weight: bold; color: #44aaff; }
+#tree-tokens-hud { font-size: 14px; color: #cc44ff; font-weight: bold; }
+#tree-close { background: #1a1a1a; border: 1px solid #333; color: #aaa; padding: 6px 16px; border-radius: 5px; cursor: pointer; font-size: 13px; font-family: inherit; }
+#tree-close:hover { background: #252525; color: #fff; }
+#tree-scroll { flex: 1; overflow: auto; }
+#tree-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+#tree-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+#tree-field { position: relative; width: 1300px; min-width: 1300px; height: 1250px; margin: 0 auto; flex-shrink: 0; }
+#tree-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.tnode { position: absolute; width: 54px; height: 54px; border-radius: 50%; border: 2px solid #333; background: #0e0e0e; color: #555; cursor: pointer; transform: translate(-50%,-50%); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: transform 0.1s, box-shadow 0.15s; user-select: none; line-height: 1; padding: 2px; z-index: 2; }
+.tnode:hover { transform: translate(-50%,-50%) scale(1.12); }
+.tnode:active { transform: translate(-50%,-50%) scale(0.92); }
+.tnode.available { border-color: var(--nc); background: #141414; color: #eee; box-shadow: 0 0 10px var(--nc); }
+.tnode.bought { background: var(--nc); border-color: rgba(255,255,255,0.6); color: #fff; box-shadow: 0 0 16px var(--nc); cursor: default; }
+.tnode.locked { opacity: 0.3; cursor: not-allowed; }
+.tnode.timebank { border-radius: 8px; transform: translate(-50%,-50%) rotate(45deg); width: 46px; height: 46px; }
+.tnode.timebank:hover { transform: translate(-50%,-50%) rotate(45deg) scale(1.12); }
+.tnode.timebank:active { transform: translate(-50%,-50%) rotate(45deg) scale(0.92); }
+.tnode.timebank .tnode-icon { transform: rotate(-45deg); font-size:16px; }
+.tnode.timebank .tnode-cost { transform: rotate(-45deg); font-size:8px; margin-top:1px; }
+.tnode-icon { font-size: 18px; }
+.tnode-cost { font-size: 9px; margin-top: 2px; }
+.tnode-label { position: absolute; transform: translate(-50%,0); font-size: 9px; color: #666; text-align: center; width: 80px; pointer-events: none; line-height: 1.3; z-index: 1; }
+#tree-tooltip { position: fixed; background: rgba(5,5,5,0.97); border: 1px solid #333; border-radius: 8px; padding: 11px 15px; pointer-events: none; display: none; z-index: 10000; max-width: 250px; }
+#tt-name { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+#tt-desc { font-size: 12px; color: #aaa; margin-bottom: 6px; line-height: 1.55; }
+#tt-cost { font-size: 12px; }
+#tt-req { font-size: 11px; color: #666; margin-top: 4px; }
+#tt-status { font-size: 11px; margin-top: 5px; font-weight: bold; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="rainbow-overlay"></div>
+<div id="prestige-overlay"></div>
+<div id="ui">
+  <div id="topbar">
+    <div>
+      <div id="money-display">$0.00</div>
+      <div id="net-worth">Total: $0.00</div>
+      <div id="per-sec">$0.00/sec</div>
+      <div id="hustle-tokens">⬡ 0 Hustle Tokens</div>
+      <div id="prestige-preview"></div>
+    </div>
+    <div id="right-hud">
+      <div id="top-right-btns">
+        <div id="level-display">Level 1 Hustler</div>
+        <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
+        <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
+        <div id="help-btn" onclick="openHelp()" title="Help">?</div>
+      </div>
+      <div id="xp-bar-wrap"><div id="xp-bar"></div></div>
+    </div>
+  </div>
+  <div id="milestone-bar">
+    <div id="milestone-text">Next:</div>
+    <div id="milestone-progress-wrap"><div id="milestone-progress"></div></div>
+    <div id="milestone-goal">$100</div>
+  </div>
+  <div id="mid-area">
+    <div id="left-actions">
+      <div id="frenzy-btn" onclick="activateFrenzy()">⚡</div>
+      <div id="frenzy-cd">Locked</div>
+      <div id="mega-frenzy-btn" onclick="activateMegaFrenzy()">🔥</div>
+      <div id="mega-cd">Locked</div>
+    </div>
+    <div id="click-zone" onclick="handleClick(event)">
+      <div id="big-btn">💰</div>
+      <div id="click-label">HUSTLE</div>
+      <div id="click-value">+$1.00</div>
+    </div>
+    <div id="combo-zone">
+      <div id="combo-display">x1.0</div>
+      <div id="combo-label">COMBO</div>
+      <div id="combo-bar-wrap"><div id="combo-bar"></div></div>
+    </div>
+    <div id="right-actions">
+      <div id="prestige-btn" onclick="prestige()">✨</div>
+      <div id="prestige-label">Locked</div>
+      <div id="prestige-count"></div>
+      <div id="tree-toggle" onclick="openTree()">🌳</div>
+      <div id="tree-label">SKILL TREE</div>
+    </div>
+  </div>
+  <div id="active-effects"></div>
+  <div id="toast-wrap"></div>
+  <div id="bottom-panel">
+    <div class="panel"><div class="panel-title"><span>Businesses</span></div><div id="biz-list"></div></div>
+    <div class="panel"><div class="panel-title"><span>Upgrades</span><button class="buy-all-btn" id="upg-buyall-btn" onclick="buyAllUpgrades()" style="display:none">Buy All</button></div><div id="upg-list"></div></div>
+    <div class="panel"><div class="panel-title"><span>Consumables</span><button class="buy-all-btn" id="con-buyall-btn" onclick="buyAllConsumables()" style="display:none">Use All</button></div><div id="items-list"></div></div>
+    <div class="panel"><div class="panel-title"><span>Perks</span><button class="buy-all-btn" id="perk-buyall-btn" onclick="buyAllPerks()" style="display:none">Buy All</button></div><div id="perks-list"></div></div>
+  </div>
+</div>
+
+<!-- SKILL TREE MODAL — pure HTML, no canvas -->
+<div id="tree-modal">
+  <div id="tree-header">
+    <div id="tree-header-title">🌳 Hustle Skill Tree</div>
+    <div id="tree-tokens-hud">⬡ 0 Tokens</div>
+    <button id="tree-close" onclick="closeTree()">✕ Close</button>
+  </div>
+  <div id="tree-scroll">
+    <div id="tree-field">
+      <svg id="tree-svg"></svg>
+    </div>
+  </div>
+  <div id="tree-tooltip">
+    <div id="tt-name"></div>
+    <div id="tt-desc"></div>
+    <div id="tt-cost"></div>
+    <div id="tt-req"></div>
+    <div id="tt-status"></div>
+  </div>
+</div>
+
+<!-- Global tooltip for panels -->
+<div id="g-tooltip">
+  <div class="gt-name" id="gt-name"></div>
+  <div class="gt-body" id="gt-body"></div>
+  <div id="gt-tag-wrap"></div>
+  <div class="gt-hint" id="gt-hint"></div>
+</div>
+
+<!-- Help modal -->
+<div id="help-modal">
+  <div id="help-modal-header">
+    <h2>❓ How to Play</h2>
+    <button id="help-close" onclick="closeHelp()">✕ Close</button>
+  </div>
+  <div id="help-body">
+
+    <div class="help-section">
+      <h3 style="color:#44ff88">💰 Making Money</h3>
+      <p>Tap the big <b>💰 HUSTLE</b> button to earn money manually. The amount shown below it is what each click earns right now.</p>
+      <p>Buy <b class="hl-yellow">Businesses</b> in the bottom-left panel — they earn money automatically over time. The progress bar shows when the next payout fires.</p>
+      <p>Your <b class="hl-yellow">$/sec</b> in the top bar is purely from businesses. Clicking doesn't count toward it.</p>
+      <div class="help-tip">💡 Early game: click a lot. Late game: businesses take over and clicking barely matters unless you stack click buffs.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#ffcc44">⬆️ Upgrades vs Perks</h3>
+      <p><b class="hl-yellow">Upgrades</b> (2nd panel) are one-time purchases with <b>money</b>. They multiply a specific business or your click value permanently. Most require you to own at least one of that business first.</p>
+      <p><b class="hl-blue">Perks</b> (4th panel) are also bought with money, permanent, and affect broader things like frenzy cooldown, passive income, or click speed.</p>
+      <p><b class="hl-green">Combo Strike</b> in Upgrades unlocks the combo multiplier — without it, clicking gives no combo bonus at all.</p>
+      <div class="help-tip">💡 Upgrades reset on prestige. Perks also reset. Only Skill Tree nodes survive prestige.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#ffff44">🔥 Clicks vs Income</h3>
+      <p><b class="hl-yellow">Click buffs</b> only affect what you earn by tapping the button. Useless if you're AFK.</p>
+      <p><b class="hl-green">Income buffs</b> multiply what all your businesses earn passively. More valuable the more businesses you own.</p>
+      <p><b class="hl-orange">Both buffs</b> (like Gold Rush) multiply everything at once — best value.</p>
+      <div class="help-tip">💡 Early game a click buff is great. By mid-game, an income buff is almost always better.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#ff8844">⚡ Consumables</h3>
+      <p>Consumables are one-use temporary boosts bought with money. They go on cooldown after use.</p>
+      <p>All consumables start <b>locked</b>. Buy <b class="hl-green">Consumables I–V</b> in the Upgrades panel to unlock each tier. Tier 1 is cheap ($500), Tier 5 costs $10B and is prestige-era only.</p>
+      <p>Tiers go 1→5. Higher tier = stronger effect, higher cost, longer cooldown. Don't buy tier 4–5 items until late game.</p>
+      <div class="help-tip">💡 Time Warp fires all business payouts instantly — great to combine with an income buff. Omega Warp and The Big One are tier 5 and pay out 100x and a full week of income.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#ff8844">🔥 Combo Multiplier</h3>
+      <p>The <b class="hl-yellow">COMBO</b> meter builds as you click repeatedly. Higher combo = more money per click.</p>
+      <p>It <b>decays</b> if you stop clicking. The bar shows how long before it starts falling.</p>
+      <p>You must buy <b class="hl-green">Combo Strike</b> in the Upgrades panel ($200) to unlock it. Until then it does nothing.</p>
+      <div class="help-tip">💡 Unlock "Combo Speed I" in the Skill Tree to build combo faster. "Combo Strike" in the Skill Tree lets you lock your combo at max.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#cc44ff">⬡ Hustle Tokens</h3>
+      <p>Tokens are the <b class="hl-purple">prestige currency</b> — you earn them by prestiging. Prestige unlocks automatically at <b>$1B total earned</b>.</p>
+      <p>Tokens use a <b>cube root</b> (∛) formula: <b>8 × ∛(earned ÷ $1B)</b>. Cube root means the scale grows very slowly — earning 8x more money only gets you 2x more tokens. This keeps each prestige feeling meaningful without inflating token counts.</p>
+      <p style="font-size:10px;color:#666;line-height:1.9">
+        $1B earned → <b class="hl-purple">5 tokens</b><br>
+        $4B earned → <b class="hl-purple">10 tokens</b><br>
+        $25B earned → <b class="hl-purple">25 tokens</b><br>
+        $100B earned → <b class="hl-purple">50 tokens</b><br>
+        $1T earned → <b class="hl-purple">~160 tokens</b><br>
+        $10T earned → <b class="hl-purple">~500 tokens</b>
+      </p>
+      <p>Spend tokens in the <b class="hl-blue">Skill Tree 🌳</b> on permanent upgrades that survive every prestige.</p>
+      <div class="help-tip">💡 Token Miner nodes in the tree multiply your token yield per prestige. E.g. Token Miner III (10x) at $100B gives 500 tokens instead of 50.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#cc44ff">✨ Prestige</h3>
+      <p>Prestige <b>resets</b> your money, businesses, upgrades, and perks — but keeps your Skill Tree nodes and earns you tokens.</p>
+      <p>Prestige <b>unlocks automatically</b> when you earn <b class="hl-purple">$1 Billion</b> total in a single run. No Skill Tree node required — just reach $1B.</p>
+      <p>Each prestige earns tokens based on how much you made that run (see the <b class="hl-purple">⬡ Hustle Tokens</b> section for the full breakdown) and grants a <b class="hl-orange">permanent income multiplier</b> that stacks — prestige 1 = 1.5x, prestige 2 = 2.25x, etc.</p>
+      <div class="help-tip">💡 The top bar shows your progress toward $1B before unlock, then shows "+X tokens" once unlocked. Wait until the token count is worth it before prestiging.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#44aaff">🌳 Skill Tree</h3>
+      <p>The Skill Tree is the only thing that <b>permanently</b> improves your game across prestiges. Everything else resets.</p>
+      <p>Nodes unlock from top to bottom — you must buy parent nodes first. Locked nodes are shown faded.</p>
+      <p>Costs range from <b>5⬡ to 250⬡</b> (GODMODE). GODMODE unlocks everything and doubles all bonuses.</p>
+      <div class="help-tip">💡 Hover over any node to see what it does before buying. Greyed out = can't afford or missing requirement.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#ff4466">⚡ Frenzy &amp; Mega Frenzy</h3>
+      <p><b class="hl-red">Frenzy</b> gives 5x click earnings for 8 seconds. Unlock it via "First Steps" in the Skill Tree.</p>
+      <p><b class="hl-orange">Mega Frenzy</b> gives 15x click earnings for 6 seconds. Unlock via "Mega Frenzy" node in the tree.</p>
+      <p>Both have cooldowns. The "Frenzy Auto" and "Mega Auto" tree nodes make them activate automatically.</p>
+      <div class="help-tip">💡 Stack a click consumable + Frenzy + Mega Frenzy at the same time for massive burst damage.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#ffcc44">📊 Milestones &amp; XP</h3>
+      <p>The <b class="hl-yellow">milestone bar</b> tracks your progress toward total money earned targets. Hitting one spawns a shockwave.</p>
+      <p><b class="hl-blue">XP</b> (top right bar) levels you up as you earn money. Your title changes with each level — purely cosmetic.</p>
+      <div class="help-tip">💡 Milestones reset on prestige. XP and level also reset. Only Skill Tree and tokens persist.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Save / Load modal -->
+<div id="save-modal">
+  <div id="save-box">
+    <h2>💾 Save / Load</h2>
+    <div id="save-slots"></div>
+    <div style="margin-top:14px;border-top:1px solid #1a1a1a;padding-top:14px;">
+      <div style="font-size:12px;color:#888;margin-bottom:8px;">📤 Export / Import save string</div>
+      <div style="font-size:10px;color:#555;margin-bottom:8px;">Copy your save string to back it up or move it to another device. The string is tamper-protected — edited strings will be rejected.</div>
+      <div class="save-row">
+        <button class="save-action-btn green" onclick="exportSave()" style="flex:1">📋 Copy Export String</button>
+        <button class="save-action-btn blue" onclick="showImportBox()" style="flex:1">📥 Import from String</button>
+      </div>
+      <div id="import-area" style="display:none;margin-top:8px;">
+        <textarea id="import-text" style="width:100%;height:70px;background:#0a0a0a;border:1px solid #333;color:#aaa;border-radius:4px;padding:6px;font-size:10px;font-family:monospace;resize:vertical;" placeholder="Paste your save string here..."></textarea>
+        <div class="save-row" style="margin-top:6px;margin-bottom:0">
+          <button class="save-action-btn blue" onclick="importSave()" style="flex:1">✓ Import</button>
+          <button class="save-action-btn" onclick="hideImportBox()" style="flex:1">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div id="save-msg"></div>
+    <!-- Wipe Progress -->
+    <div style="margin-top:14px;border-top:1px solid #1a1a1a;padding-top:12px;">
+      <button id="wipe-btn" class="save-action-btn red" style="width:100%;padding:7px;font-size:11px;" onclick="showWipeConfirm()">⚠️ Wipe All Progress</button>
+      <div id="wipe-confirm" style="display:none;background:#1a0000;border:1px solid #ff444460;border-radius:6px;padding:12px;margin-top:6px;">
+        <div style="font-size:12px;color:#ff6666;font-weight:bold;margin-bottom:6px;">⚠️ Are you sure?</div>
+        <div style="font-size:11px;color:#888;margin-bottom:10px;">This will permanently delete ALL your progress — money, businesses, upgrades, skill tree, tokens, and all save slots. This cannot be undone.</div>
+        <div style="display:flex;gap:8px;">
+          <button class="save-action-btn red" style="flex:1;padding:6px;" onclick="confirmWipe()">Yes, wipe everything</button>
+          <button class="save-action-btn" style="flex:1;padding:6px;" onclick="cancelWipe()">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <button id="save-close-btn" onclick="closeSave()">✕ Close</button>
+    <div class="help-section">
+      <h3 style="color:#44ff88">💾 Saving Your Game</h3>
+      <p>Click <b class="hl-green">💾 Save</b> in the top-right to open the save menu. You have <b>5 manual save slots</b> — each shows your level, total earned, and prestige count.</p>
+      <p><b>Same browser, same device:</b> saves persist in your browser's local storage. Return to the same code.org link in the same browser and your saves will be there.</p>
+      <p><b>Different device or browser:</b> use <b class="hl-yellow">Export</b> to copy a save string, then <b class="hl-blue">Import</b> on the other device to paste it in.</p>
+      <p><b class="hl-green">Update-safe saves:</b> saves are stored by name, not position — so if the game gets updated with new businesses, upgrades, or tree nodes, your old save still loads correctly. New items just start at zero.</p>
+      <p><b class="hl-red">Tamper protection:</b> the export string has a hidden checksum. If you edit it to change your money or tokens, the checksum won't match and the import is rejected.</p>
+      <div class="help-tip">💡 Autosave runs every 60 seconds. If you return with no manual saves, it automatically restores your last session.</div>
+    </div>
+
+  </div>
+</div>
+<!-- Leaderboard modal -->
+<div id="lb-modal">
+  <div id="lb-box">
+    <h2>🏆 All-Time Earnings Leaderboard</h2>
+    <div id="lb-subtitle">Scores update every 60 seconds automatically once linked. Everyone sees the same board.</div>
+    <div id="lb-entries"><div style="color:#555;font-size:12px;padding:20px 0;text-align:center;">Loading...</div></div>
+    <!-- Submit section -->
+    <div style="margin-top:14px;border-top:1px solid #1a1a1a;padding-top:12px;">
+      <div style="font-size:11px;color:#888;margin-bottom:8px;">📌 Link a save slot to auto-update your score every minute:</div>
+      <div id="lb-submit-row">
+        <select id="lb-slot-select" style="flex:1;background:#0a0a0a;border:1px solid #333;color:#aaa;padding:6px 8px;border-radius:4px;font-size:11px;font-family:inherit;">
+          <option value="">— Select a slot —</option>
+        </select>
+        <button class="save-action-btn green" style="padding:6px 14px;" onclick="linkSlot()">📌 Link Slot</button>
+      </div>
+      <div id="lb-linked-info" style="font-size:11px;color:#555;margin-top:6px;"></div>
+    </div>
+    <div id="lb-status"></div>
+    <button id="lb-close-btn" onclick="closeLeaderboard()">✕ Close</button>
+  </div>
+</div>
+
+<script>
+var c=document.getElementById("c"),ctx=c.getContext("2d");
+var W=document.documentElement.clientWidth||800,H=document.documentElement.clientHeight||600;
+if(W<100)W=800;if(H<100)H=600;
+c.width=W;c.height=H;
+
+var money=0,totalEarned=0,perSec=0,clickValue=1;
+var xp=0,xpNeeded=100,playerLevel=1;
+var combo=1,comboTimer=0,comboMax=3.5;
+// Combo gain reduced — needs ~25 clicks to reach max vs instant before
+var COMBO_GAIN_BASE = 0.10;
+var frenzyActive=false,frenzyCd=0,frenzyTimer=0,frenzyDur=8,frenzyCdMax=45;
+var megaFrenzyActive=false,megaFrenzyCd=0,megaFrenzyTimer=0,megaFrenzyDur=6,megaFrenzyCdMax=120;
+var globalMult=1,clickMult=1,incomeBoost=1;
+var rainbowActive=false,rainbowTimer=0;
+var prestigeCount=0,prestigeMult=1;
+var hustleTokens=0;
+var prestigeTokenMult=1; // multiplied by Token Miner tree nodes
+var floaties=[],sparks=[],rainbowP=[],shockwaves=[];
+var lastTime=Date.now(),t=0,renderCount=0;
+var effectList={};
+var comboLocked=false;
+var comboUnlocked=false; // combo is hidden until "Combo Strike" upgrade is bought
+var comboMaxActive=false; // true when combo is at cap — drives rainbow + bonus
+var COMBO_BONUS_MULT=3; // extra global multiplier when at max combo
+var listsDirty=true; // flag: rebuild bottom panel lists only when state changes
+var autoClickRate=0,autoClickTimer=0;
+var autoBuyActive=false,autoBuyTimer=0;
+var autoUpgradeActive=false,autoUpgradeTimer=0;
+var autoFrenzy=false,autoMegaFrenzy=false;
+var frenzyUnlocked=false,megaFrenzyUnlocked=false,prestigeUnlocked=false,buyAllUnlocked=false;
+var clickChainChance=0,clickChainCount=2; // click chain: chance to fire bonus auto-clicks
+var prestigeBaseMult=1.5; // base per-prestige multiplier (can be upgraded)
+var cashBonusMult=0;
+var bulkBuyCount=1; // how many of the same consumable to buy per click (Bulk Consumer upgrades increase this)
+var consumableTierUnlocked=0; // 0=locked, 1=tier1 usable, 2=tier1+2, etc.
+var perkEffects={comboCap:8,comboTimerMult:1,luckyBoost:1,rainbowMult:1,costReduce:1,basePassive:0,bizSpeedMult:1};
+var cdReduceMult=1;
+
+var levels=["Hustler","Street Vendor","Freelancer","Side Hustler","Entrepreneur","Angel Investor","CEO","Tycoon","Mogul","Billionaire","Trillionaire","Quadrillionaire","God of Money"];
+var milestones=[100,500,2000,10000,50000,200000,1e6,5e6,2e7,1e8,5e8,1e9,1e10,1e12,1e15,1e18,1e21,1e24,1e27,1e30];
+var milestoneIdx=0;
+var suffixes=["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
+function fmt(n){if(n<0)return"-"+fmt(-n);if(n<1000)return"$"+n.toFixed(2);for(var i=suffixes.length-1;i>=1;i--){var v=Math.pow(1000,i);if(n>=v)return"$"+(n/v).toFixed(2)+suffixes[i];}return"$"+n.toFixed(2);}
+
+var businesses=[
+  {name:"Lemonade Stand",icon:"🍋",baseCost:15,baseIncome:0.1,owned:0,timer:0,interval:3,mult:1,color:"#ffff44"},
+  {name:"Car Wash",icon:"🚗",baseCost:80,baseIncome:0.5,owned:0,timer:0,interval:5,mult:1,color:"#44aaff"},
+  {name:"Food Truck",icon:"🌮",baseCost:300,baseIncome:2,owned:0,timer:0,interval:6,mult:1,color:"#ff8844"},
+  {name:"Laundromat",icon:"👕",baseCost:800,baseIncome:6,owned:0,timer:0,interval:7,mult:1,color:"#aa44ff"},
+  {name:"Barbershop",icon:"✂️",baseCost:2500,baseIncome:18,owned:0,timer:0,interval:8,mult:1,color:"#ff4488"},
+  {name:"Coffee Shop",icon:"☕",baseCost:8000,baseIncome:55,owned:0,timer:0,interval:9,mult:1,color:"#cc8844"},
+  {name:"Gym",icon:"💪",baseCost:25000,baseIncome:160,owned:0,timer:0,interval:10,mult:1,color:"#44ff88"},
+  {name:"Restaurant",icon:"🍽️",baseCost:80000,baseIncome:480,owned:0,timer:0,interval:12,mult:1,color:"#ff6644"},
+  {name:"Hotel",icon:"🏨",baseCost:250000,baseIncome:1400,owned:0,timer:0,interval:14,mult:1,color:"#44ffcc"},
+  {name:"Tech Startup",icon:"💻",baseCost:1e6,baseIncome:5000,owned:0,timer:0,interval:16,mult:1,color:"#8888ff"},
+  {name:"Hedge Fund",icon:"📈",baseCost:5e6,baseIncome:25000,owned:0,timer:0,interval:18,mult:1,color:"#44ff44"},
+  {name:"Casino",icon:"🎰",baseCost:2e7,baseIncome:120000,owned:0,timer:0,interval:20,mult:1,color:"#ffaa00"},
+  {name:"Oil Empire",icon:"🛢️",baseCost:1e8,baseIncome:600000,owned:0,timer:0,interval:22,mult:1,color:"#886644"},
+  {name:"Space Agency",icon:"🚀",baseCost:5e8,baseIncome:3e6,owned:0,timer:0,interval:25,mult:1,color:"#4488ff"},
+  {name:"Quantum Bank",icon:"🏦",baseCost:5e9,baseIncome:2e7,owned:0,timer:0,interval:28,mult:1,color:"#ff44ff"}
+];
+
+var upgrades=[
+  {name:"Better Hustle",    desc:"Your click earnings are doubled — every tap pays 2x more.",                             cost:50,    bought:false,type:"click",mult:2,   reqIdx:-1,req:0},
+  {name:"Catchy Sign",      desc:"Lemonade Stand earns 2x income — doubles its payout each cycle.",                      cost:100,   bought:false,type:"biz", mult:2,   reqIdx:0, req:1},
+  {name:"Power Washer",     desc:"Car Wash earns 3x income — triples its payout each cycle.",                            cost:400,   bought:false,type:"biz", mult:3,   reqIdx:1, req:1},
+  {name:"Viral Recipe",     desc:"Food Truck earns 3x income — triples its payout each cycle.",                          cost:1500,  bought:false,type:"biz", mult:3,   reqIdx:2, req:1},
+  {name:"Speed Hustle",     desc:"Your click earnings are multiplied 5x — every tap pays 5x more.",                      cost:2000,  bought:false,type:"click",mult:5,   reqIdx:-1,req:0},
+  {name:"Loyalty Cards",    desc:"Laundromat earns 4x income — quadruples its payout each cycle.",                       cost:4000,  bought:false,type:"biz", mult:4,   reqIdx:3, req:1},
+  {name:"Famous Cuts",      desc:"Barbershop earns 4x income — quadruples its payout each cycle.",                       cost:12000, bought:false,type:"biz", mult:4,   reqIdx:4, req:1},
+  {name:"Secret Blend",     desc:"Coffee Shop earns 5x income — five times the payout each cycle.",                      cost:40000, bought:false,type:"biz", mult:5,   reqIdx:5, req:1},
+  {name:"Gold Member",      desc:"Gym earns 5x income — five times the payout each cycle.",                              cost:120000,bought:false,type:"biz", mult:5,   reqIdx:6, req:1},
+  {name:"Michelin Star",    desc:"Restaurant earns 6x income — six times the payout each cycle.",                        cost:400000,bought:false,type:"biz", mult:6,   reqIdx:7, req:1},
+  {name:"Mega Hustle",      desc:"Your click earnings are multiplied 10x — ten times the money per tap.",                cost:500000,bought:false,type:"click",mult:10,  reqIdx:-1,req:0},
+  {name:"5-Star Rating",    desc:"Hotel earns 6x income — six times the payout each cycle.",                             cost:1200000,bought:false,type:"biz",mult:6,   reqIdx:8, req:1},
+  {name:"Series A",         desc:"Startup earns 8x income — eight times the payout each cycle.",                         cost:5e6,   bought:false,type:"biz", mult:8,   reqIdx:9, req:1},
+  {name:"Quant Trading",    desc:"Hedge Fund earns 10x income — ten times the payout each cycle.",                       cost:2e7,   bought:false,type:"biz", mult:10,  reqIdx:10,req:1},
+  {name:"House Wins",       desc:"Casino earns 10x income — ten times the payout each cycle.",                           cost:8e7,   bought:false,type:"biz", mult:10,  reqIdx:11,req:1},
+  {name:"Black Gold",       desc:"Oil Empire earns 12x income — twelve times the payout each cycle.",                    cost:5e8,   bought:false,type:"biz", mult:12,  reqIdx:12,req:1},
+  {name:"Mars Colony",      desc:"Space Corp earns 15x income — fifteen times the payout each cycle.",                   cost:2e9,   bought:false,type:"biz", mult:15,  reqIdx:13,req:1},
+  {name:"Crypto God",       desc:"Quantum Bank earns 20x income — twenty times the payout each cycle.",                  cost:2e10,  bought:false,type:"biz", mult:20,  reqIdx:14,req:1},
+  {name:"Ultra Click",      desc:"Your click earnings are multiplied 25x — every tap pays twenty-five times more.",      cost:1e9,   bought:false,type:"click",mult:25,  reqIdx:-1,req:0},
+  {name:"Doomsday Click",   desc:"Your click earnings are multiplied 100x — each tap is worth a hundred times more.",    cost:1e12,  bought:false,type:"click",mult:100, reqIdx:-1,req:0},
+  {name:"God Click",        desc:"Your click earnings are multiplied 1000x — each tap is worth one thousand times more.",cost:1e18,  bought:false,type:"click",mult:1000,reqIdx:-1,req:0},
+  {name:"All x2",           desc:"Every business earns 2x income — doubles the payout of all businesses.",               cost:1e7,   bought:false,type:"all", mult:2,   reqIdx:-1,req:0},
+  {name:"All x5",           desc:"Every business earns 5x income — five times the payout of all businesses.",            cost:1e10,  bought:false,type:"all", mult:5,   reqIdx:-1,req:0},
+  {name:"All x10",          desc:"Every business earns 10x income — ten times the payout of all businesses.",            cost:1e13,  bought:false,type:"all", mult:10,  reqIdx:-1,req:0},
+  {name:"All x50",          desc:"Every business earns 50x income — fifty times the payout of all businesses.",          cost:1e16,  bought:false,type:"all", mult:50,  reqIdx:-1,req:0},
+  {name:"All x1000",        desc:"Every business earns 1000x income — one thousand times the payout of all businesses.", cost:1e20,  bought:false,type:"all", mult:1000,reqIdx:-1,req:0}
+];
+
+var consumables=[
+  // Tier 1 — cheap, weak
+  {name:"Energy Drink", icon:"⚡",  desc:"1.5x clicks for 20s",              cost:50,    effect:"click3x",     effectDur:20, cooldown:30,  cdLeft:0,count:0,color:"#ffff44",tier:1},
+  {name:"Lucky Coin",   icon:"🪙",  desc:"Small random cash bonus",           cost:120,   effect:"lucky",       effectDur:0,  cooldown:45,  cdLeft:0,count:0,color:"#ffcc44",tier:1},
+  {name:"Megaphone",    icon:"📣",  desc:"3x income for 20s",                 cost:400,   effect:"income2x",    effectDur:20, cooldown:60,  cdLeft:0,count:0,color:"#ff8844",tier:1},
+  // Tier 2 — mid game
+  {name:"Speed Shot",   icon:"💊",  desc:"5x clicks for 15s",                 cost:1500,  effect:"click3x",     effectDur:15, cooldown:60,  cdLeft:0,count:0,color:"#ffff44",tier:2},
+  {name:"Time Warp",    icon:"⏰",  desc:"All businesses pay instantly",       cost:2000,  effect:"timewarp",    effectDur:0,  cooldown:120, cdLeft:0,count:0,color:"#aa44ff",tier:2},
+  {name:"Gold Rush",    icon:"🏆",  desc:"5x everything for 15s",             cost:3500,  effect:"gold",        effectDur:15, cooldown:90,  cdLeft:0,count:0,color:"#ffd700",tier:2},
+  {name:"Rainbow Boost",icon:"🌈",  desc:"RAINBOW MODE for 15s",              cost:5000,  effect:"rainbow",     effectDur:15, cooldown:90,  cdLeft:0,count:0,color:"#ff44ff",tier:2},
+  // Tier 3 — late game
+  {name:"Adrenaline",   icon:"💉",  desc:"10x clicks for 20s",                cost:15000, effect:"adrenaline",  effectDur:20, cooldown:120, cdLeft:0,count:0,color:"#ff2244",tier:3},
+  {name:"Cloner",       icon:"🔮",  desc:"5x income for 30s",                 cost:25000, effect:"clone",       effectDur:30, cooldown:150, cdLeft:0,count:0,color:"#44ffff",tier:3},
+  {name:"Overclock",    icon:"🔋",  desc:"All businesses run 8x faster for 20s", cost:50000, effect:"overclock", effectDur:20, cooldown:180, cdLeft:0,count:0,color:"#88ff44",tier:3},
+  {name:"Jackpot",      icon:"🎰",  desc:"Random 10x–100x income burst",      cost:100000,effect:"jackpot",     effectDur:0,  cooldown:300, cdLeft:0,count:0,color:"#ffff44",tier:3},
+  // Tier 4 — endgame
+  {name:"Diamond Hands",icon:"💎",  desc:"25x income for 30s",                cost:500000,effect:"diamond",     effectDur:30, cooldown:180, cdLeft:0,count:0,color:"#88ddff",tier:4},
+  {name:"Time Crystal", icon:"🔷",  desc:"10x biz speed for 30s",             cost:1e6,   effect:"timecrystal", effectDur:30, cooldown:600, cdLeft:0,count:0,color:"#44ffff",tier:4},
+  {name:"Neon Storm",   icon:"🌩️", desc:"50x clicks + rainbow for 25s",      cost:2e7,   effect:"neonstorm",   effectDur:25, cooldown:300, cdLeft:0,count:0,color:"#ff88ff",tier:4},
+  // Tier 5 — prestige-era only
+  {name:"Omega Warp",   icon:"🌌",  desc:"All businesses pay 100x instantly", cost:2e11,  effect:"omegawarp",   effectDur:0,  cooldown:3600,cdLeft:0,count:0,color:"#4488ff",tier:5},
+  {name:"Void Tap",     icon:"🕳️", desc:"Every auto-click earns 1000x for 15s", cost:5e11, effect:"voidtap",   effectDur:15, cooldown:1800,cdLeft:0,count:0,color:"#884fff",tier:5},
+  {name:"Business Frenzy",icon:"🏭",desc:"All income 50x for 20s",            cost:1e12,  effect:"bizfrenzy",   effectDur:20, cooldown:2400,cdLeft:0,count:0,color:"#ff8844",tier:5},
+  {name:"Combo Surge",  icon:"💫",  desc:"Instantly max your combo and lock it for 30s", cost:5e12, effect:"combosurge", effectDur:30, cooldown:2400,cdLeft:0,count:0,color:"#ffff88",tier:5},
+  {name:"Market Crash", icon:"📉",  desc:"Resets ALL consumable cooldowns instantly",     cost:1e8,  effect:"cdresetall", effectDur:0,  cooldown:900, cdLeft:0,count:0,color:"#ff4488",tier:5}
+];
+
+var perks=[
+  // req:-1 = always available. req:N = tree node id N must be bought first.
+  // Only God Mode and Click Master are multipliers — everything else is a percentage bonus.
+  {name:"Quick Fingers",      desc:"Clicks earn +25%",                    cost:500,    owned:false,type:"clickpct",      val:0.25, req:-1},
+  {name:"Passive Income",     desc:"+$10/sec passive income",              cost:800,    owned:false,type:"baseincome",    val:10,   req:-1},
+  {name:"Bulk Buyer",         desc:"Businesses cost 10% less",             cost:1200,   owned:false,type:"costreduce",    val:0.9,  req:-1},
+  {name:"Sharp Eye",          desc:"Upgrades cost 15% less",               cost:2000,   owned:false,type:"upgradediscount",val:0.85,req:-1},
+  {name:"Hustle Harder",      desc:"Clicks earn +50%",                     cost:3500,   owned:false,type:"clickpct",      val:0.50, req:-1},
+  {name:"Empire Builder",     desc:"All businesses earn +75%",             cost:8000,   owned:false,type:"incomepct",     val:0.75, req:-1},
+  {name:"Speed Demon",        desc:"All businesses run 30% faster",        cost:12000,  owned:false,type:"bizspdpct",     val:0.30, req:-1},
+  {name:"Double Down",        desc:"All businesses earn +150%",            cost:50000,  owned:false,type:"incomepct",     val:1.50, req:-1},
+  {name:"Passive Millionaire",desc:"+$1K/sec passive income",              cost:100000, owned:false,type:"baseincome",    val:1000, req:-1},
+  {name:"Prestige Master",    desc:"Prestige income +50% per prestige",    cost:500000, owned:false,type:"prestigepct",   val:0.50, req:-1},
+  {name:"Turbo Business",     desc:"All businesses run 80% faster",        cost:2000000,owned:false,type:"bizspdpct",     val:0.80, req:-1},
+  {name:"Mega Passive",       desc:"+$1M/sec passive income",              cost:1e7,    owned:false,type:"baseincome",    val:1e6,  req:-1},
+  {name:"Ultra Passive",      desc:"+$1B/sec passive income",              cost:1e10,   owned:false,type:"baseincome",    val:1e9,  req:-1},
+  {name:"Monopoly",            desc:"All businesses earn 5x",               cost:5e10,   owned:false,type:"empireall",     val:5,    req:-1},
+  // Locked perks — shown at bottom until req met, then sorted by cost into main list
+  {name:"Frenzy Master",      desc:"Frenzy cooldown 40% shorter",          cost:3000,   owned:false,type:"frenzypct",               req:0},
+  {name:"Frenzy Duration",    desc:"Frenzy lasts 50% longer",              cost:6000,   owned:false,type:"frenzydurpct",  val:0.50, req:0},
+  {name:"Lucky Star",         desc:"Lucky Coin pays out +200% more",       cost:4000,   owned:false,type:"luckypct",      val:2.00, req:62},
+  {name:"Rainbow Soul",       desc:"Rainbow mode lasts 60% longer",        cost:5000,   owned:false,type:"rainbowpct",    val:0.60, req:63},
+  {name:"Click Boost",        desc:"Clicks earn +100%",                    cost:10000,  owned:false,type:"clickpct",      val:1.00, req:69},
+  {name:"Click Master",       desc:"Clicks earn 10x (multiplier)",         cost:1e11,   owned:false,type:"goldtouch",     val:10,   req:69},
+];
+
+// ── TREE NODES ──
+// NEW: node id=2 is now "Combo Speed I" (early unlock, cheap)
+// Old combo speed node id=3 stays but shifted to be "Click Power I" (+3x click value)
+// Tokens now require 500x more money-earned to accumulate (handled in addMoney)
+var treeNodes=[
+  {id:0, x:640,y:60,  name:"First Steps",      icon:"👣",  desc:"Unlock Frenzy button. +5% cash bonus.",                                    cost:3,    bought:false,req:[],          type:"unlock_frenzy",    color:"#ff4466"},
+  {id:1, x:190,y:180, name:"Auto Clicker I",   icon:"🖱️",  desc:"Auto-clicks once every 3 seconds.",                                        cost:12,   bought:false,req:[0],          type:"autoclickI",       color:"#44aaff"},
+  {id:2, x:370,y:180, name:"Combo Speed I",    icon:"🔥",  desc:"Combo builds 1.5x faster.",                                                cost:10,   bought:false,req:[0],          type:"combospeedI",      color:"#ff8844"},
+  {id:3, x:540,y:180, name:"Click Power I",    icon:"👊",  desc:"+3x to all click earnings.",                                               cost:10,   bought:false,req:[0],          type:"clickboost",val:3,  color:"#44ff88"},
+  {id:4, x:710,y:180, name:"Cash Bonus I",     icon:"💵",  desc:"+10% to all cash earned.",                                                 cost:10,   bought:false,req:[0],          type:"cashbonus",val:0.1, color:"#ffcc44"},
+  {id:5, x:890,y:180, name:"Frenzy Boost I",   icon:"⚡",  desc:"Frenzy cooldown -30%. Frenzy lasts 2s longer.",                           cost:15,   bought:false,req:[0],          type:"frenzybuff",       color:"#ff4466"},
+  {id:6, x:140, y:300, name:"Auto Clicker II",  icon:"🖱️",  desc:"Auto-clicks 3 times per second.",                                         cost:25,   bought:false,req:[1],          type:"autoclickII",      color:"#44aaff"},
+  {id:7, x:270,y:300, name:"Auto Buyer",        icon:"🛒",  desc:"Buys cheapest business every 10s.",                                       cost:20,   bought:false,req:[1],          type:"autobuy",          color:"#44ff88"},
+  {id:8, x:370,y:300, name:"Combo Speed II",   icon:"🔥",  desc:"Combo builds 2x faster total.",                                           cost:20,   bought:false,req:[2],          type:"combospeedII",     color:"#ff8844"},
+  {id:9, x:540,y:300, name:"Click Power II",   icon:"👊",  desc:"+5x to all click earnings.",                                              cost:25,   bought:false,req:[3],          type:"clickboost",val:5,  color:"#44ff88"},
+  {id:10,x:710,y:300, name:"Cash Bonus II",    icon:"💵",  desc:"+25% to all cash earned.",                                                cost:20,   bought:false,req:[4],          type:"cashbonus",val:0.25,color:"#ffcc44"},
+  {id:11,x:890,y:300, name:"Frenzy Boost II",  icon:"⚡",  desc:"Frenzy cooldown halved total. Duration +4s total.",                       cost:25,   bought:false,req:[5],          type:"frenzybuff2",      color:"#ff4466"},
+  {id:12,x:1070,y:300, name:"Biz Speed I",       icon:"⏩",  desc:"All businesses run 2x faster permanently.",                              cost:30,   bought:false,req:[0],          type:"bizspeednode",val:2,color:"#44ffcc"},
+  {id:13,x:140, y:420, name:"Auto Clicker III", icon:"🖱️",  desc:"Auto-clicks 10 times per second.",                                        cost:40,   bought:false,req:[6],          type:"autoclickIII",     color:"#44aaff"},
+  {id:14,x:270,y:420, name:"Token Miner I",    icon:"⬡",   desc:"Earn 1.5x tokens when you prestige.",                                       cost:50,   bought:false,req:[6,7],        type:"tokenmult",val:1.5,   color:"#cc44ff"},
+  {id:15,x:370,y:420, name:"Auto Upgrade",     icon:"📦",  desc:"Buys cheapest upgrade every 15s.",                                        cost:30,   bought:false,req:[7],          type:"autoupgrade",      color:"#aa44ff"},
+  {id:16,x:540,y:420, name:"Click Power III",  icon:"👊",  desc:"+10x to all click earnings.",                                             cost:40,   bought:false,req:[9],          type:"clickboost",val:10, color:"#44ff88"},
+  {id:17,x:710,y:420, name:"Cash Bonus III",   icon:"💵",  desc:"+50% to all cash earned.",                                                cost:30,   bought:false,req:[10],         type:"cashbonus",val:0.5, color:"#ffcc44"},
+  {id:18,x:890,y:420, name:"Mega Frenzy",      icon:"🔥",  desc:"Unlock Mega Frenzy button.",                                              cost:30,   bought:false,req:[11],         type:"unlock_mega",      color:"#ff8800"},
+  {id:19,x:1070,y:420, name:"Biz Speed II",      icon:"⏩",  desc:"All businesses run 3x faster total.",                                    cost:50,  bought:false,req:[12],         type:"bizspeednode",val:3,color:"#44ffcc"},
+  {id:20,x:140, y:540, name:"Auto Clicker IV",  icon:"🖱️",  desc:"Auto-clicks 25 times per second.",                                        cost:80,  bought:false,req:[13],         type:"autoclickIV",      color:"#44aaff"},
+  {id:21,x:270,y:540, name:"Token Miner II",   icon:"⬡",   desc:"Earn 2x tokens when you prestige (3x total with Miner I).",                                      cost:150,  bought:false,req:[14],         type:"tokenmult",val:2,   color:"#cc44ff"},
+  {id:22,x:370,y:540, name:"Bulk Consumer I",  icon:"🛍️",  desc:"Buy 3 of the same consumable per click.",                                cost:60,  bought:false,req:[15],         type:"stackup",val:3,     color:"#ff88cc"},
+  {id:23,x:540,y:540, name:"Click Chain I",    icon:"🔗",  desc:"Each click has a 20% chance to fire 2 bonus auto-clicks.",               cost:80,  bought:false,req:[16],         type:"clickchain",val:0.2,color:"#44ff88"},
+  {id:24,x:710,y:540, name:"Cash Bonus IV",    icon:"💵",  desc:"+100% to all cash (doubles it!).",                                       cost:80,  bought:false,req:[17],         type:"cashbonus",val:1.0, color:"#ffcc44"},
+  {id:25,x:840,y:540, name:"Income Boost I",   icon:"📊",  desc:"All business income x2 forever.",                                        cost:100,  bought:false,req:[17],         type:"incomemult",val:2,  color:"#44ff88"},
+  {id:26,x:960,y:540, name:"Frenzy Auto",      icon:"⚡",  desc:"Frenzy activates automatically.",                                        cost:60,  bought:false,req:[11,18],      type:"autofrenzy",       color:"#ff4466"},
+  {id:27,x:1070,y:540, name:"Mega Auto",        icon:"🔥",  desc:"Mega Frenzy activates automatically.",                                   cost:80,  bought:false,req:[26],         type:"automegafrenzy",   color:"#ff8800"},
+  {id:28,x:140, y:660, name:"Auto Clicker V",   icon:"🖱️",  desc:"Auto-clicks 100 times per second.",                                      cost:180,  bought:false,req:[20],         type:"autoclickV",       color:"#44aaff"},
+  {id:29,x:270,y:660, name:"Token Miner III",  icon:"⬡",   desc:"Earn 2.5x tokens when you prestige (7.5x total).",                                     cost:500,  bought:false,req:[21],         type:"tokenmult",val:2.5,  color:"#cc44ff"},
+  {id:30,x:370,y:660, name:"Bulk Consumer II", icon:"🛍️",  desc:"Buy 5 of the same consumable per click.",                                cost:150,  bought:false,req:[22],         type:"stackup",val:5,     color:"#ff88cc"},
+  {id:31,x:540,y:660, name:"Click Chain II",   icon:"🔗",  desc:"Click chain chance 50%, fires 4 bonus clicks.",                         cost:220,  bought:false,req:[23],         type:"clickchain2",      color:"#44ff88"},
+  {id:32,x:710,y:660, name:"Cash Bonus V",     icon:"💵",  desc:"+200% cash (tripling!).",                                               cost:200,  bought:false,req:[24],         type:"cashbonus",val:2.0, color:"#ffcc44"},
+  {id:33,x:840,y:660, name:"Income Boost II",  icon:"📊",  desc:"All business income x5 total.",                                         cost:250,  bought:false,req:[25],         type:"incomemult",val:5,  color:"#44ff88"},
+  {id:34,x:960,y:660, name:"Cooldown Reducer", icon:"⏱️",  desc:"All consumable cooldowns -40%.",                                        cost:180,  bought:false,req:[25,22],      type:"cdreduce",val:0.6,  color:"#44ffcc"},
+  {id:35,x:1070,y:660, name:"Biz Speed III",    icon:"⏩",  desc:"All businesses run 10x faster total.",                                   cost:220,  bought:false,req:[19],         type:"bizspeednode",val:10,color:"#44ffcc"},
+  {id:36,x:140, y:780, name:"Auto Clicker VI",  icon:"🖱️",  desc:"Auto-clicks 500 times per second.",                                      cost:400, bought:false,req:[28],         type:"autoclickVI",      color:"#44aaff"},
+  {id:37,x:270,y:780, name:"Token Surge I",    icon:"⬡",   desc:"Earn 3x tokens when you prestige (22.5x total).",                                     cost:1200, bought:false,req:[29],         type:"tokenmult",val:3,  color:"#cc44ff"},
+  {id:38,x:370,y:780, name:"Bulk Consumer III",icon:"🛍️",  desc:"Buy 10 of the same consumable per click.",                               cost:250,  bought:false,req:[30],         type:"stackup",val:10,    color:"#ff88cc"},
+  {id:39,x:540,y:780, name:"Click God",        icon:"👊",  desc:"Clicks earn 50x. Combo locks at max.",                                  cost:550, bought:false,req:[31],         type:"clickgod",         color:"#44ff88"},
+  {id:40,x:710,y:780, name:"Cash Bonus VI",    icon:"💵",  desc:"+500% cash (6x total!).",                                               cost:400, bought:false,req:[32],         type:"cashbonus",val:5.0, color:"#ffcc44"},
+  {id:41,x:840,y:780, name:"Prestige Booster", icon:"✨",  desc:"Each prestige gives 2x income multiplier instead of 1.5x.",             cost:400, bought:false,req:[33],         type:"prestigeboostnode",color:"#cc44ff"},
+  {id:42,x:960,y:780, name:"Mega Cooldown",    icon:"❄️",  desc:"All consumable cooldowns -70% total.",                                   cost:300, bought:false,req:[34],         type:"cdreduce",val:0.5,  color:"#44ffcc"},
+  {id:43,x:1070,y:780, name:"Omega Speed",      icon:"⏩",  desc:"All businesses run 50x faster total.",                                   cost:450, bought:false,req:[35],         type:"bizspeednode",val:50,color:"#44ffcc"},
+  {id:44,x:140, y:900, name:"Auto Clicker MAX", icon:"🖱️",  desc:"Auto-clicks 2000 times per second.",                                     cost:600, bought:false,req:[36],         type:"autoclickMAX",     color:"#44aaff"},
+  {id:45,x:270,y:900, name:"Token Surge II",   icon:"⬡",   desc:"Earn 3.5x tokens when you prestige (78.75x total).",                                    cost:3000, bought:false,req:[37],         type:"tokenmult",val:3.5, color:"#cc44ff"},
+  {id:46,x:540,y:900, name:"Passive Empire",   icon:"🏙️",  desc:"+$1M/sec passive income permanently.",                                   cost:500, bought:false,req:[39,41],      type:"baseincome",val:1e6,color:"#ffcc44"},
+  {id:47,x:710,y:900, name:"Cash Bonus VII",   icon:"💵",  desc:"+1000% cash (11x total!).",                                              cost:600, bought:false,req:[40],         type:"cashbonus",val:10.0,color:"#ffcc44"},
+  {id:48,x:840,y:900, name:"Prestige Surge",   icon:"✨",  desc:"Prestige multiplier doubled per prestige.",                              cost:600, bought:false,req:[41],         type:"prestigeboostnode2",color:"#cc44ff"},
+  {id:49,x:1070,y:900, name:"Absolute Speed",   icon:"⏩",  desc:"All businesses run 200x faster.",                                        cost:700, bought:false,req:[43],         type:"bizspeednode",val:200,color:"#44ffcc"},
+  {id:50,x:270,y:1020,name:"Token God",        icon:"⬡",   desc:"Earn 2x tokens when you prestige (157.5x total with all miners).",                                    cost:5000, bought:false,req:[45],         type:"tokenmult",val:2, color:"#cc44ff"},
+  {id:51,x:540,y:1020,name:"Infinite Wealth",  icon:"∞",   desc:"+$1B/sec passive income permanently.",                                   cost:1500,bought:false,req:[46,47],      type:"baseincome",val:1e9,color:"#ffcc44"},
+  {id:52,x:710,y:1020,name:"Click Universe",   icon:"🌌",  desc:"Clicks earn 1000x. Combo never decays.",                                cost:1800,bought:false,req:[39,48],      type:"clickuniverse",    color:"#44ff88"},
+  {id:53,x:1070,y:1020,name:"Max Speed",        icon:"⏩",  desc:"All businesses run 1000x faster. Near-instant.",                        cost:1200, bought:false,req:[49],         type:"bizspeednode",val:1000,color:"#44ffcc"},
+  {id:54,x:640,y:1140,name:"GODMODE",           icon:"👑",  desc:"Unlock everything. ALL bonuses x2. Auto everything. Max bulk buy.",     cost:2500,bought:false,req:[50,51,52,53],type:"godmode",    color:"#ffd700"},
+  {id:55,x:1260,y:300, name:"Time Bank",       icon:"🏦",  desc:"Unlock instant income payouts — spend tokens for cash equal to your $/sec × time. Payouts can be bought repeatedly.",cost:8,bought:false,req:[0],type:"timebank_unlock",color:"#ffcc44"},
+  {id:56,x:1260,y:420, name:"1 Min Payout",    icon:"⏱️",  desc:"Instantly earn 1 minute of your current $/sec. Repeatable — buy as many times as you like.",cost:3,  bought:false,req:[55],type:"timebank_pay",val:60,   color:"#ffcc44"},
+  {id:57,x:1260,y:540, name:"10 Min Payout",   icon:"🕐",  desc:"Instantly earn 10 minutes of your current $/sec. Repeatable.",cost:15, bought:false,req:[55],type:"timebank_pay",val:600,  color:"#ffcc44"},
+  {id:58,x:1260,y:660, name:"1 Hr Payout",     icon:"🕑",  desc:"Instantly earn 1 hour of your current $/sec. Repeatable.",cost:50,bought:false,req:[55],type:"timebank_pay",val:3600, color:"#ffaa00"},
+  {id:59,x:1260,y:780, name:"12 Hr Payout",    icon:"🕛",  desc:"Instantly earn 12 hours of your current $/sec. Repeatable.",cost:200,bought:false,req:[55],type:"timebank_pay",val:43200,color:"#ff8844"},
+  {id:60,x:1260,y:900, name:"1 Day Payout",    icon:"📅",  desc:"Instantly earn 24 hours of your current $/sec. Repeatable.",cost:600,bought:false,req:[55],type:"timebank_pay",val:86400,color:"#ff4444"},
+  {id:61,x:1260,y:1020,name:"1 Week Payout",   icon:"📆",  desc:"Instantly earn 1 week of your current $/sec. Repeatable. The ultimate token sink.",cost:2000,bought:false,req:[55],type:"timebank_pay",val:604800,color:"#cc44ff"},
+  {id:62,x:10,y:180,  name:"Consumables I",   icon:"🧪", desc:"Unlock Tier 1 consumables (Energy Drink, Lucky Coin, Megaphone).",cost:5,  bought:false,req:[0],  type:"consumable_tier",tierVal:1,color:"#ff8844"},
+  {id:63,x:10,y:300,  name:"Consumables II",  icon:"🧪", desc:"Unlock Tier 2 consumables (Speed Shot, Time Warp, Gold Rush, Rainbow Boost).",cost:20, bought:false,req:[62], type:"consumable_tier",tierVal:2,color:"#ff8844"},
+  {id:64,x:10,y:420,  name:"Consumables III", icon:"🧪", desc:"Unlock Tier 3 consumables (Adrenaline, Cloner, Overclock, Jackpot).",cost:60, bought:false,req:[63], type:"consumable_tier",tierVal:3,color:"#ff8844"},
+  {id:65,x:10,y:540,  name:"Consumables IV",  icon:"🧪", desc:"Unlock Tier 4 consumables (Diamond Hands, Time Crystal, Neon Storm).",cost:200,bought:false,req:[64], type:"consumable_tier",tierVal:4,color:"#ff8844"},
+  {id:66,x:10,y:660,  name:"Consumables V",   icon:"🧪", desc:"Unlock Tier 5 consumables (Omega Warp, Void Tap, Business Frenzy, Market Crash, Combo Surge).",cost:800,bought:false,req:[65], type:"consumable_tier",tierVal:5,color:"#ff4444"},
+  {id:67,x:790,y:60,  name:"Combo Strike",  icon:"🥊",  desc:"Unlock the combo multiplier — click repeatedly to build it up for bigger earnings.",cost:3,bought:false,req:[0],type:"combo_unlock",color:"#ffcc44"},
+  {id:68,x:790,y:180, name:"Combo King",     icon:"👑", desc:"Max combo cap raised to 15x. Works best with high combo speed.", cost:8,  bought:false,req:[67], type:"combocap",   val:15, color:"#ffcc44"},
+  {id:69,x:790,y:300, name:"Time is Money",  icon:"⏳", desc:"Combo window lasts 3x longer before it starts to decay.",        cost:12, bought:false,req:[68], type:"combotimer", val:3,  color:"#ffcc44"},
+  {id:70,x:1070,y:180,  name:"Buy All",          icon:"🛒",  desc:"Unlocks Buy All buttons on every panel.",cost:10,bought:false,req:[0],type:"unlock_buyall",color:"#44ffcc"}
+];
+
+// Returns how long (seconds) you have to click again before losing that combo level.
+// Higher combo = shorter window. Max combo (8) = 0.6s, combo 1 = 3.5s.
+function comboWindowForLevel(c){
+  var cap=perkEffects.comboCap;
+  // 0→8: linear from 3.5s down to 0.6s (same as before)
+  // 8→cap: drops much faster — from 0.6s down to 0.18s
+  // This makes 15x extremely hard to hold (need to click every ~0.2s)
+  if(c<=8){
+    var t=Math.max(0,(c-1)/7); // 0 at combo 1, 1 at combo 8
+    return 3.5 - t*(3.5-0.6);
+  } else {
+    var t2=(c-8)/Math.max(1,cap-8); // 0 at combo 8, 1 at cap
+    return 0.6 - t2*(0.6-0.18);    // 0.6s at 8x down to 0.18s at cap
+  }
+}
+function bizCost(b){return Math.floor(b.baseCost*Math.pow(1.15,b.owned)*perkEffects.costReduce);}
+function bizIncome(b){return b.baseIncome*b.owned*b.mult*incomeBoost*globalMult*prestigeMult;}
+function calcPerSec(){var tot=perkEffects.basePassive;for(var i=0;i<businesses.length;i++)if(businesses[i].owned>0)tot+=bizIncome(businesses[i])/businesses[i].interval;perSec=tot;}
+function rainbowColor(t2){return"hsl("+((t2*90)%360)+",100%,65%)";}
+
+function addMoney(amt){
+  var final=amt*(1+cashBonusMult);
+  money+=final;totalEarned+=final;
+  xp+=Math.max(0.001,final)*0.01;
+  while(xp>=xpNeeded){xp-=xpNeeded;playerLevel++;xpNeeded=Math.floor(xpNeeded*1.6);toast("LEVEL UP! "+levels[Math.min(playerLevel-1,levels.length-1)],"#44aaff");}
+  while(milestoneIdx<milestones.length&&totalEarned>=milestones[milestoneIdx]){
+    toast("MILESTONE: "+fmt(milestones[milestoneIdx])+"!","#ffcc44");
+    if(milestones[milestoneIdx]>=1e9&&!prestigeUnlocked){
+      prestigeUnlocked=true;
+      toast("🌟 PRESTIGE UNLOCKED! You've earned $1B!","#cc44ff");
+      spawnRainbowBurst(W/2,H/2,35);
+    }
+    milestoneIdx++;spawnShockwave(W/2,H/2);
+  }
+  return final;
+}
+
+function spawnShockwave(x,y){shockwaves.push({x:x,y:y,r:0,life:1});}
+
+function handleClick(e){
+  // Combo boost nodes multiply the gain
+  var comboSpeedMult = 1;
+  if(treeNodes[2].bought) comboSpeedMult *= 1.5;  // Combo Speed I (id:2)
+  if(treeNodes[8].bought) comboSpeedMult *= 1.33; // Combo Speed II (id:8)
+  if(comboUnlocked && !comboLocked){
+    var cg = COMBO_GAIN_BASE * comboSpeedMult;
+    // Above 8x combo it's 2x harder to build — need twice as many clicks per level
+    if(combo >= 8) cg *= 0.5;
+    combo=Math.min(perkEffects.comboCap,combo+cg);
+    comboTimer=comboWindowForLevel(combo)*perkEffects.comboTimerMult;
+  }
+  // Trigger max-combo bonus when first hitting cap
+  if(comboUnlocked && combo>=perkEffects.comboCap && !comboMaxActive){
+    comboMaxActive=true;
+    globalMult*=COMBO_BONUS_MULT;
+    startRainbow(999); // sustained rainbow — cleared when combo drops
+    addEffect("🔥 MAX COMBO! 3x ALL","#ff44ff",999);
+    toast("MAX COMBO! Rainbow mode + 3x everything!","#ff44ff");
+    spawnRainbowBurst(W/2,H/2,40);
+    spawnShockwave(W/2,H/2);
+  }
+  var activeCombo = comboUnlocked ? combo : 1;
+  var base=clickValue*clickMult*(frenzyActive?5:1)*(megaFrenzyActive?15:1)*globalMult*prestigeMult*activeCombo;
+  var earned=addMoney(base);
+  var rect=document.getElementById("big-btn").getBoundingClientRect();
+  var fx=rect.left+rect.width/2+(Math.random()-0.5)*40;
+  var fy=rect.top+rect.height/2+(Math.random()-0.5)*20;
+  var col=rainbowActive?rainbowColor(t):(megaFrenzyActive?"#ff8800":(frenzyActive?"#ff4466":"#44ff88"));
+  floaties.push({x:fx,y:fy,vy:-2.5-combo*0.15,life:1,text:"+"+fmt(earned),color:col,sz:Math.min(18,10+combo*0.8)});
+  var sc=Math.min(28,7+combo*3);
+  for(var i=0;i<sc;i++){var a=Math.random()*6.28,sp=1.5+Math.random()*5;sparks.push({x:fx,y:fy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-1.5,life:1,color:(rainbowActive||comboMaxActive)?rainbowColor(t+i*0.2):col,sz:1.5+Math.random()*2.5});}
+  if(rainbowActive||megaFrenzyActive||comboMaxActive)spawnRainbowBurst(fx,fy,comboMaxActive?30:(rainbowActive?20:10));
+  if(combo>=perkEffects.comboCap)spawnShockwave(fx,fy);
+  // Click chain — chance to fire bonus auto-clicks
+  if(clickChainChance>0&&Math.random()<clickChainChance){
+    var chainEarned=clickValue*clickMult*(frenzyActive?5:1)*(megaFrenzyActive?15:1)*globalMult*prestigeMult*combo;
+    for(var ci=0;ci<clickChainCount;ci++){addMoney(chainEarned);}
+    floaties.push({x:fx+30,y:fy-20,vy:-2,life:0.8,text:"⛓ x"+clickChainCount+"!",color:"#44ff88",sz:11});
+  }
+  updateUI();
+}
+
+function activateFrenzy(){if(!frenzyUnlocked||frenzyCd>0||frenzyActive)return;frenzyActive=true;frenzyTimer=frenzyDur;addEffect("⚡ FRENZY 5x","#ff4466",frenzyDur);toast("FRENZY! 5x clicks!","#ff4466");spawnRainbowBurst(W/2,H/2,30);}
+function activateMegaFrenzy(){if(!megaFrenzyUnlocked||megaFrenzyCd>0||megaFrenzyActive)return;megaFrenzyActive=true;megaFrenzyTimer=megaFrenzyDur;addEffect("🔥 MEGA 15x","#ff8800",megaFrenzyDur);toast("MEGA FRENZY!","#ff8800");startRainbow(megaFrenzyDur);spawnRainbowBurst(W/2,H/2,50);spawnShockwave(W/2,H/2);}
+
+// Token formula: sqrt curve so it scales without exploding.
+// $1B = 8 tokens, $8B = 16, $27B = 24, $100B = 37, $1T = 80, $10T = 172
+function tokensForPrestige(earned){return Math.floor(8*Math.cbrt(earned/1e9));}
+
+function prestige(){
+  if(!prestigeUnlocked){toast("Earn $1B total to unlock Prestige!","#cc44ff");return;}
+  if(totalEarned<1e7){toast("Need $10M total earned to prestige!","#cc44ff");return;}
+  var gained=Math.floor(tokensForPrestige(totalEarned)*prestigeTokenMult);
+  if(gained<=0){toast("Need more earnings for tokens!","#cc44ff");return;}
+  prestigeCount++;
+  hustleTokens+=gained;
+  var pb=perks.find(function(p){return p.type==="prestigepct"&&p.owned;});
+  prestigeMult=Math.pow(prestigeBaseMult,prestigeCount);
+  money=0;totalEarned=0;xp=0;playerLevel=1;xpNeeded=100;milestoneIdx=0;
+  for(var i=0;i<businesses.length;i++){businesses[i].owned=0;businesses[i].timer=0;}
+  for(var i=0;i<upgrades.length;i++)upgrades[i].bought=false;
+  consumableTierUnlocked=0;
+  comboUnlocked=false;document.getElementById("combo-zone").style.display="none";
+  for(var i=0;i<consumables.length;i++)consumables[i].cdLeft=0;
+  clickValue=1;clickMult=1;incomeBoost=1;globalMult=1;combo=1;comboTimer=0;
+  if(comboMaxActive){comboMaxActive=false;removeEffect("🔥 MAX COMBO! 3x ALL");}
+  cashBonusMult=0;
+  // Re-apply tree bonuses that survive prestige
+  for(var i=0;i<treeNodes.length;i++){
+    if(treeNodes[i].bought){
+      if(treeNodes[i].type==="cashbonus")cashBonusMult+=treeNodes[i].val;
+      if(treeNodes[i].type==="clickboost")clickValue*=treeNodes[i].val;
+      if(treeNodes[i].type==="consumable_tier")consumableTierUnlocked=Math.max(consumableTierUnlocked,treeNodes[i].tierVal);
+      if(treeNodes[i].type==="combo_unlock"){comboUnlocked=true;document.getElementById("combo-zone").style.display="flex";}
+      if(treeNodes[i].type==="combocap"){perkEffects.comboCap=treeNodes[i].val;}
+      if(treeNodes[i].type==="combotimer"){perkEffects.comboTimerMult=treeNodes[i].val;}
+    }
+  }
+  if(treeNodes[0].bought)cashBonusMult+=0.05;
+  // Re-apply owned perks (they survive prestige but clickValue/mult was reset)
+  perkEffects.bizSpeedMult=1;perkEffects.basePassive=0;perkEffects.costReduce=1;
+  frenzyCdMax=45;frenzyDur=8;
+  for(var i=0;i<perks.length;i++){
+    var p=perks[i];if(!p.owned)continue;
+    if(p.type==="baseincome")    perkEffects.basePassive+=p.val;
+    if(p.type==="costreduce")    perkEffects.costReduce*=p.val;
+    if(p.type==="clickpct")      clickMult*=(1+p.val);
+    if(p.type==="goldtouch")     clickValue*=p.val;
+    if(p.type==="incomepct")     {for(var j=0;j<businesses.length;j++)businesses[j].mult*=(1+p.val);}
+    if(p.type==="empireall")     {for(var j=0;j<businesses.length;j++)businesses[j].mult*=p.val;}
+    if(p.type==="bizspdpct")     perkEffects.bizSpeedMult*=(1+p.val);
+    if(p.type==="frenzypct")     frenzyCdMax*=0.60;
+    if(p.type==="frenzydurpct")  frenzyDur*=(1+p.val);
+    if(p.type==="luckypct")      perkEffects.luckyBoost+=(p.val||2);
+    if(p.type==="rainbowpct")    perkEffects.rainbowMult*=(1+p.val);
+    if(p.type==="prestigepct")   prestigeBaseMult+=(prestigeBaseMult*p.val);
+  }
+  calcPerSec();
+  document.getElementById("prestige-overlay").style.opacity="1";
+  setTimeout(function(){document.getElementById("prestige-overlay").style.opacity="0";},1500);
+  toast("PRESTIGE #"+prestigeCount+"! +"+gained+"⬡ tokens! ("+Math.floor(hustleTokens)+"⬡ total)","#cc44ff");
+  spawnShockwave(W/2,H/2);spawnShockwave(W/3,H/3);spawnShockwave(2*W/3,H/3);
+  listsDirty=true;updateUI();renderAll();
+}
+
+function getEffectiveCd(item){return Math.max(15,item.cooldown*cdReduceMult);}
+function canUseConsumable(idx){
+  var item=consumables[idx];
+  if(item.tier>consumableTierUnlocked)return false; // tier not unlocked yet
+  if(money<item.cost*bulkBuyCount&&money<item.cost)return false;
+  if(item.cdLeft>0)return false;
+  return true;
+}
+
+function useConsumable(idx){
+  var item=consumables[idx];
+  if(!canUseConsumable(idx)){
+    if(item.cdLeft>0)toast("On cooldown! "+item.cdLeft.toFixed(0)+"s remaining","#ff4444");
+    else toast("Not enough money!","#ff4444");
+    return;
+  }
+  // Buy as many as we can afford up to bulkBuyCount
+  var times=Math.min(bulkBuyCount,Math.floor(money/item.cost));
+  if(times<1)times=1;
+  var totalCost=item.cost*times;
+  if(money<totalCost){times=1;totalCost=item.cost;}
+  money-=totalCost;
+  item.count+=times;
+  item.cdLeft=getEffectiveCd(item);
+  var label=times>1?"x"+times+" "+item.icon+" "+item.name:item.icon+" "+item.name;
+  toast("Used "+label+"!",item.color);
+  spawnRainbowBurst(W/2,H/2,times>1?24:14);
+  // Apply the effect 'times' times
+  for(var _t=0;_t<times;_t++){_applyConsumableEffect(item);}
+  calcPerSec();listsDirty=true;updateUI();renderAll();
+}
+
+function _applyConsumableEffect(item){
+  if(item.effect==="click3x"){
+    var cm=item.tier===1?1.5:5; // Energy Drink=1.5x, Speed Shot=5x
+    clickMult*=cm;var lbl="CLICK "+cm+"x";
+    addEffect(lbl,"#ffff44",item.effectDur);
+    setTimeout(function(){clickMult/=cm;removeEffect(lbl);},item.effectDur*1000);
+  }
+  else if(item.effect==="lucky"){var b=Math.max(perSec*5,100)*(0.5+Math.random()*9.5)*perkEffects.luckyBoost;addMoney(b);floaties.push({x:W/2,y:H/2,vy:-3,life:1,text:"LUCKY! +"+fmt(b),color:"#ffcc44",sz:16});spawnRainbowBurst(W/2,H/2,25);}
+  else if(item.effect==="income2x"){incomeBoost*=3;addEffect("INCOME 3x","#ff8844",item.effectDur);setTimeout(function(){incomeBoost/=3;removeEffect("INCOME 3x");calcPerSec();},item.effectDur*1000);}
+  else if(item.effect==="gold"){globalMult*=5;clickMult*=5;addEffect("GOLD 5x","#ffd700",item.effectDur);startRainbow(item.effectDur);setTimeout(function(){globalMult/=5;clickMult/=5;removeEffect("GOLD 5x");},item.effectDur*1000);}
+  else if(item.effect==="timewarp"){var tot=0;for(var i=0;i<businesses.length;i++){if(businesses[i].owned>0){tot+=bizIncome(businesses[i]);businesses[i].timer=0;}}addMoney(tot);floaties.push({x:W/2,y:H/2-40,vy:-3,life:1,text:"TIME WARP! +"+fmt(tot),color:"#aa44ff",sz:16});spawnShockwave(W/2,H/2);}
+  else if(item.effect==="rainbow")startRainbow(item.effectDur*perkEffects.rainbowMult);
+  else if(item.effect==="overclock"){perkEffects.bizSpeedMult*=8;addEffect("🔋 OVERCLOCK 8x SPEED","#88ff44",item.effectDur);setTimeout(function(){perkEffects.bizSpeedMult/=8;removeEffect("🔋 OVERCLOCK 8x SPEED");calcPerSec();},item.effectDur*1000);}
+  else if(item.effect==="cdresetall"){for(var ci=0;ci<consumables.length;ci++)consumables[ci].cdLeft=0;floaties.push({x:W/2,y:H/2,vy:-3,life:1,text:"📉 ALL COOLDOWNS RESET!",color:"#ff4488",sz:16});spawnRainbowBurst(W/2,H/2,30);listsDirty=true;}
+  else if(item.effect==="neonstorm"){clickMult*=50;startRainbow(item.effectDur);addEffect("🌩️ NEON STORM 50x CLICKS","#ff88ff",item.effectDur);setTimeout(function(){clickMult/=50;removeEffect("🌩️ NEON STORM 50x CLICKS");},item.effectDur*1000);}
+  else if(item.effect==="voidtap"){globalMult*=1000;addEffect("🕳️ VOID TAP 1000x","#884fff",item.effectDur);setTimeout(function(){globalMult/=1000;removeEffect("🕳️ VOID TAP 1000x");},item.effectDur*1000);}
+  else if(item.effect==="bizfrenzy"){incomeBoost*=50;addEffect("🏭 BIZ FRENZY 50x","#ff8844",item.effectDur);startRainbow(item.effectDur);setTimeout(function(){incomeBoost/=50;removeEffect("🏭 BIZ FRENZY 50x");calcPerSec();},item.effectDur*1000);}
+  else if(item.effect==="combosurge"){combo=perkEffects.comboCap;comboLocked=true;addEffect("💫 COMBO SURGE MAX LOCKED","#ffff88",item.effectDur);setTimeout(function(){comboLocked=false;removeEffect("💫 COMBO SURGE MAX LOCKED");},item.effectDur*1000);}
+  else if(item.effect==="clone"){incomeBoost*=5;addEffect("INCOME 5x","#44ffff",item.effectDur);setTimeout(function(){incomeBoost/=5;removeEffect("INCOME 5x");calcPerSec();},item.effectDur*1000);}
+  else if(item.effect==="diamond"){incomeBoost*=25;addEffect("💎 25x INCOME","#88ddff",item.effectDur);startRainbow(item.effectDur);setTimeout(function(){incomeBoost/=25;removeEffect("💎 25x INCOME");calcPerSec();},item.effectDur*1000);}
+  else if(item.effect==="printer"){var e=perSec*600;addMoney(e);floaties.push({x:W/2,y:H/2,vy:-3,life:1,text:"🖨️ 10MIN! +"+fmt(e),color:"#44ff88",sz:16});spawnShockwave(W/2,H/2);}
+  else if(item.effect==="adrenaline"){clickMult*=10;addEffect("💉 10x CLICKS","#ff2244",item.effectDur);startRainbow(item.effectDur);setTimeout(function(){clickMult/=10;removeEffect("💉 10x CLICKS");},item.effectDur*1000);}
+  else if(item.effect==="supernova"){var e=perSec*7200;addMoney(e);floaties.push({x:W/2,y:H/2,vy:-4,life:1,text:"💥 2HR SUPERNOVA! +"+fmt(e),color:"#ffaa00",sz:20});startRainbow(5);for(var i=0;i<4;i++)spawnShockwave(W/2+Math.cos(i*1.57)*100,H/2+Math.sin(i*1.57)*100);}
+  else if(item.effect==="timecrystal"){perkEffects.bizSpeedMult*=10;addEffect("⏩ 10x BIZ SPEED","#44ffff",item.effectDur);setTimeout(function(){perkEffects.bizSpeedMult/=10;removeEffect("⏩ 10x BIZ SPEED");},item.effectDur*1000);}
+  else if(item.effect==="jackpot"){var mult=10+Math.floor(Math.random()*91);var e=perSec*60*mult;addMoney(e);floaties.push({x:W/2,y:H/2,vy:-3.5,life:1.5,text:"🎰 x"+mult+" JACKPOT! +"+fmt(e),color:"#ffff44",sz:18});spawnRainbowBurst(W/2,H/2,35);if(mult>50)startRainbow(4);}
+}
+
+function perkReqMet(p){
+  if(p.req===-1||p.req===undefined)return true;
+  return treeNodes[p.req]&&treeNodes[p.req].bought;
+}
+
+function buyPerk(idx){
+  var p=perks[idx];
+  if(p.owned||money<p.cost)return;
+  if(!perkReqMet(p)){toast("Unlock the required Skill Tree node first!","#ff4444");return;}
+  money-=p.cost;p.owned=true;toast("PERK: "+p.name,"#44aaff");
+  if(p.type==="baseincome")    perkEffects.basePassive+=p.val;
+  if(p.type==="costreduce")    perkEffects.costReduce*=p.val;
+  if(p.type==="upgradediscount"){for(var j=0;j<upgrades.length;j++)if(!upgrades[j].bought)upgrades[j].cost=Math.floor(upgrades[j].cost*p.val);}
+  if(p.type==="clickpct")      clickMult*=(1+p.val);           // additive % stacked as multiplier
+  if(p.type==="goldtouch")     clickValue*=p.val;              // true multiplier (only Click Master)
+  if(p.type==="incomepct")     {for(var i=0;i<businesses.length;i++)businesses[i].mult*=(1+p.val);}
+  if(p.type==="empireall")     {for(var i=0;i<businesses.length;i++)businesses[i].mult*=p.val;}
+  if(p.type==="bizspdpct")     perkEffects.bizSpeedMult*=(1+p.val);
+  if(p.type==="bizspeed")      perkEffects.bizSpeedMult*=p.val;
+  if(p.type==="frenzypct")     frenzyCdMax*=0.60;             // -40% cooldown
+  if(p.type==="frenzydurpct")  frenzyDur*=(1+p.val);
+  if(p.type==="luckypct")      perkEffects.luckyBoost+=(p.val||2);
+  if(p.type==="luckyboost")    perkEffects.luckyBoost=p.val;
+  if(p.type==="rainbowpct")    perkEffects.rainbowMult*=(1+p.val);
+  if(p.type==="rainbowext")    perkEffects.rainbowMult=p.val;
+  if(p.type==="prestigepct")   prestigeBaseMult+=(prestigeBaseMult*p.val);
+  if(p.type==="prestigeboost") prestigeMult=Math.pow(prestigeBaseMult,prestigeCount)*2;
+  if(p.type==="frenzycool")    frenzyCdMax*=0.5;
+  calcPerSec();spawnRainbowBurst(W/2,H/2,18);listsDirty=true;updateUI();renderAll();
+}
+
+function buyUpgrade(idx){
+  var u=upgrades[idx];if(u.bought||money<u.cost)return;
+  if(u.reqIdx>=0&&businesses[u.reqIdx].owned<u.req)return;
+  money-=u.cost;u.bought=true;
+  if(u.type==="click")clickValue*=u.mult;
+  if(u.type==="consumable_tier"){
+    consumableTierUnlocked=Math.max(consumableTierUnlocked,u.tierVal);
+    toast("Tier "+u.tierVal+" consumables unlocked!","#ff88cc");
+    spawnRainbowBurst(W/2,H/2,16);
+  }
+  if(u.type==="combo_unlock"){comboUnlocked=true;document.getElementById("combo-zone").style.display="flex";}
+  if(u.type==="biz")businesses[u.reqIdx].mult*=u.mult;
+  if(u.type==="all")for(var i=0;i<businesses.length;i++)businesses[i].mult*=u.mult;
+  calcPerSec();toast(u.name+" unlocked!","#44ff88");spawnRainbowBurst(W/2,H/2,12);listsDirty=true;updateUI();renderAll();
+}
+
+function buyBiz(idx){var b=businesses[idx],cost=bizCost(b);if(money<cost)return;money-=cost;b.owned++;calcPerSec();listsDirty=true;updateUI();renderAll();}
+
+function buyMaxBiz(idx){
+  if(!buyAllUnlocked)return;
+  var b=businesses[idx];
+  var bought=0;
+  while(money>=bizCost(b)){money-=bizCost(b);b.owned++;bought++;}
+  if(bought>0){calcPerSec();toast("Bought "+bought+"x "+b.name,"#44ffcc");spawnRainbowBurst(W/2,H/2,16);listsDirty=true;updateUI();renderAll();}
+  else toast("Can't afford even one "+b.name,"#ff4444");
+}
+
+function buyAllUpgrades(){
+  if(!buyAllUnlocked)return;
+  var bought=0;
+  for(var i=0;i<upgrades.length;i++){
+    var u=upgrades[i];
+    if(!u.bought&&money>=u.cost&&(u.reqIdx<0||businesses[u.reqIdx].owned>=u.req)){
+      money-=u.cost;u.bought=true;bought++;
+      if(u.type==="click")clickValue*=u.mult;
+      if(u.type==="combo_unlock"){comboUnlocked=true;document.getElementById("combo-zone").style.display="flex";}
+      if(u.type==="biz")businesses[u.reqIdx].mult*=u.mult;
+      if(u.type==="all")for(var j=0;j<businesses.length;j++)businesses[j].mult*=u.mult;
+    }
+  }
+  if(bought>0){calcPerSec();toast("Bought "+bought+" upgrade"+(bought!==1?"s":"")+"!","#44ff88");spawnRainbowBurst(W/2,H/2,20);listsDirty=true;updateUI();renderAll();}
+  else toast("No affordable upgrades available","#555");
+}
+
+function buyAllPerks(){
+  if(!buyAllUnlocked)return;
+  var bought=0;
+  for(var i=0;i<perks.length;i++){
+    var p=perks[i];
+    if(!p.owned&&money>=p.cost&&perkReqMet(p)){
+      money-=p.cost;p.owned=true;bought++;
+      if(p.type==="baseincome")    perkEffects.basePassive+=p.val;
+      if(p.type==="costreduce")    perkEffects.costReduce*=p.val;
+      if(p.type==="upgradediscount"){for(var k=0;k<upgrades.length;k++)if(!upgrades[k].bought)upgrades[k].cost=Math.floor(upgrades[k].cost*p.val);}
+      if(p.type==="clickpct")      clickMult*=(1+p.val);
+      if(p.type==="goldtouch")     clickValue*=p.val;
+      if(p.type==="incomepct")     {for(var j=0;j<businesses.length;j++)businesses[j].mult*=(1+p.val);}
+      if(p.type==="empireall")     {for(var j=0;j<businesses.length;j++)businesses[j].mult*=p.val;}
+      if(p.type==="bizspdpct")     perkEffects.bizSpeedMult*=(1+p.val);
+      if(p.type==="frenzypct")     frenzyCdMax*=0.60;
+      if(p.type==="frenzydurpct")  frenzyDur*=(1+p.val);
+      if(p.type==="luckypct")      perkEffects.luckyBoost+=(p.val||2);
+      if(p.type==="rainbowpct")    perkEffects.rainbowMult*=(1+p.val);
+      if(p.type==="prestigepct")   prestigeBaseMult+=(prestigeBaseMult*p.val);
+    }
+  }
+  if(bought>0){calcPerSec();toast("Bought "+bought+" perk"+(bought!==1?"s":"")+"!","#44aaff");spawnRainbowBurst(W/2,H/2,20);listsDirty=true;updateUI();renderAll();}
+  else toast("No affordable perks available","#555");
+}
+
+function buyAllConsumables(){
+  if(!buyAllUnlocked)return;
+  var used=0;
+  for(var i=0;i<consumables.length;i++){
+    var item=consumables[i];
+    if(item.tier>consumableTierUnlocked)continue; // skip locked tiers
+    if(item.cdLeft<=0&&money>=item.cost){
+      var times=Math.min(bulkBuyCount,Math.floor(money/item.cost));
+      if(times<1)continue;
+      money-=item.cost*times;item.count+=times;item.cdLeft=getEffectiveCd(item);
+      for(var t=0;t<times;t++)_applyConsumableEffect(item);
+      used+=times;
+    }
+  }
+  if(used>0){calcPerSec();toast("Used "+used+" consumable"+(used!==1?"s":"")+"!","#ff44ff");spawnRainbowBurst(W/2,H/2,28);startRainbow(3);listsDirty=true;updateUI();renderAll();}
+  else toast("No usable consumables available","#555");
+}
+
+function startRainbow(dur){rainbowActive=true;rainbowTimer=Math.max(rainbowTimer,dur);document.getElementById("rainbow-overlay").style.opacity="1";addEffect("🌈 RAINBOW","#ff88ff",dur);}
+function spawnRainbowBurst(x,y,count){count=count||16;for(var i=0;i<count;i++){var a=(i/count)*6.28+(Math.random()-0.5)*0.3,sp=1.5+Math.random()*5;rainbowP.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:(i/count)*360,sz:2+Math.random()*4});}}
+function addEffect(name,color,duration){effectList[name]={name:name,color:color,end:Date.now()+duration*1000};renderEffects();}
+function removeEffect(name){delete effectList[name];renderEffects();}
+function renderEffects(){var html="";for(var k in effectList){var e=effectList[k],rem=Math.max(0,(e.end-Date.now())/1000).toFixed(1);html+='<div class="effect-pill"><div class="effect-dot" style="background:'+e.color+'"></div>'+e.name+' '+rem+'s</div>';}document.getElementById("active-effects").innerHTML=html;}
+function toast(msg,color){var el=document.createElement("div");el.className="toast";el.style.borderColor=color||"#333";el.style.color=color||"#fff";el.textContent=msg;document.getElementById("toast-wrap").appendChild(el);setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},2500);}
+
+// ── SKILL TREE — HTML DIV NODES (no canvas, reliable clicking) ──
+function reqsMet(node){for(var i=0;i<node.req.length;i++)if(!treeNodes[node.req[i]].bought)return false;return true;}
+
+function buyTreeNode(id){
+  var node=treeNodes[id];
+  if(node.bought){toast(node.name+" already owned!","#888");return;}
+  if(!reqsMet(node)){
+    var missing=node.req.filter(function(r){return!treeNodes[r].bought;});
+    toast("Unlock '"+treeNodes[missing[0]].name+"' first!","#ff4444");return;
+  }
+  if(hustleTokens<node.cost){toast("Need "+node.cost+"⬡! Have: "+Math.floor(hustleTokens)+"⬡","#cc44ff");return;}
+  hustleTokens-=node.cost;
+  node.bought=true;
+  applyTreeNode(node);
+  toast("✓ Unlocked: "+node.name,"#44aaff");
+  spawnRainbowBurst(W/2,H/2,22);
+  renderTree();listsDirty=true;updateUI();renderAll();
+}
+
+function applyTreeNode(node){
+  if(node.type==="unlock_frenzy"){frenzyUnlocked=true;cashBonusMult+=0.05;}
+  if(node.type==="cashbonus"){cashBonusMult+=node.val;}
+  if(node.type==="clickboost"){clickValue*=node.val;}
+  if(node.type==="combospeedI"){}   // handled dynamically in handleClick
+  if(node.type==="combospeedII"){}  // handled dynamically in handleClick
+  if(node.type==="autoclickI"){autoClickRate=Math.max(autoClickRate,1/3);}
+  if(node.type==="autoclickII"){autoClickRate=Math.max(autoClickRate,3);}
+  if(node.type==="autoclickIII"){autoClickRate=Math.max(autoClickRate,10);}
+  if(node.type==="autoclickIV"){autoClickRate=Math.max(autoClickRate,25);}
+  if(node.type==="autoclickV"){autoClickRate=Math.max(autoClickRate,100);}
+  if(node.type==="autoclickVI"){autoClickRate=Math.max(autoClickRate,500);}
+  if(node.type==="autoclickMAX"){autoClickRate=Math.max(autoClickRate,2000);}
+  if(node.type==="autobuy"){autoBuyActive=true;}
+  if(node.type==="autoupgrade"){autoUpgradeActive=true;}
+  if(node.type==="frenzycooldown"){frenzyCdMax*=node.val;}
+  if(node.type==="frenzybuff"){frenzyCdMax*=0.7;frenzyDur+=2;toast("Frenzy CD -30%, duration +2s!","#ff4466");}
+  if(node.type==="frenzybuff2"){frenzyCdMax*=0.5;frenzyDur+=2;toast("Frenzy CD halved, duration +4s total!","#ff4466");}
+  if(node.type==="bizspeednode"){perkEffects.bizSpeedMult*=node.val;toast("Business speed x"+node.val+"!","#44ffcc");}
+  if(node.type==="clickchain"){clickChainChance=node.val;toast("Click chain unlocked! 20% double-click!","#44ff88");}
+  if(node.type==="clickchain2"){clickChainChance=0.5;clickChainCount=4;toast("Click chain 50%! Fires 4 bonus clicks!","#44ff88");}
+  if(node.type==="clickgod"){clickValue*=50;comboLocked=true;toast("CLICK GOD! 50x clicks + combo locked at max!","#44ff88");combo=perkEffects.comboCap;}
+  if(node.type==="clickuniverse"){clickValue*=1000;comboLocked=true;toast("CLICK UNIVERSE! 1000x clicks!","#44ff88");combo=perkEffects.comboCap;}
+  if(node.type==="prestigeboostnode"){prestigeBaseMult=2.0;toast("Prestige now gives 2x multiplier per prestige!","#cc44ff");}
+  if(node.type==="prestigeboostnode2"){prestigeBaseMult*=2;toast("Prestige multiplier DOUBLED again!","#cc44ff");}
+  if(node.type==="baseincome"){perkEffects.basePassive+=node.val;toast("+"+(node.val>=1e9?"$1B":node.val>=1e6?"$1M":"$"+node.val)+"/sec passive!","#ffcc44");}
+  if(node.type==="unlock_mega"){megaFrenzyUnlocked=true;}
+  if(node.type==="unlock_prestige"){prestigeUnlocked=true;}
+  if(node.type==="unlock_buyall"){buyAllUnlocked=true;listsDirty=true;}
+  if(node.type==="consumable_tier"){consumableTierUnlocked=Math.max(consumableTierUnlocked,node.tierVal);toast("Tier "+node.tierVal+" consumables unlocked!","#ff88cc");listsDirty=true;}
+  if(node.type==="timebank_unlock"){toast("⏱️ Time Bank unlocked! Spend tokens for instant cash.","#ffcc44");}
+  if(node.type==="combo_unlock"){comboUnlocked=true;document.getElementById("combo-zone").style.display="flex";toast("Combo multiplier unlocked!","#ffcc44");}
+  if(node.type==="combocap"){perkEffects.comboCap=node.val;toast("Combo cap raised to "+node.val+"x!","#ffcc44");}
+  if(node.type==="combotimer"){perkEffects.comboTimerMult=node.val;toast("Combo window 3x longer!","#ffcc44");}
+  if(node.type==="timebank_pay"){
+    // Time Bank nodes are repeatable — don't mark as bought, just fire the payout
+    var earned=perSec*node.val;
+    addMoney(earned);
+    var label=node.val>=86400?"1 Day":node.val>=43200?"12 Hrs":node.val>=3600?"1 Hr":node.val>=600?"10 Min":"1 Min";
+    floaties.push({x:W/2,y:H/2,vy:-3.5,life:1.2,text:"⏱️ "+label+" PAYOUT! +"+fmt(earned),color:"#ffcc44",sz:18});
+    spawnRainbowBurst(W/2,H/2,20);
+    spawnShockwave(W/2,H/2);
+    toast("⏱️ "+label+" payout: +"+fmt(earned),"#ffcc44");
+    // Mark as NOT bought so it can be bought again
+    node.bought=false;
+    updateUI();
+  }
+  if(node.type==="tokenmult"){prestigeTokenMult*=node.val;toast("Prestige token yield x"+node.val+"!","#cc44ff");}
+  if(node.type==="autofrenzy"){autoFrenzy=true;}
+  if(node.type==="automegafrenzy"){autoMegaFrenzy=true;}
+  if(node.type==="incomemult"){for(var i=0;i<businesses.length;i++)businesses[i].mult*=node.val;calcPerSec();}
+  if(node.type==="stackup"){bulkBuyCount=Math.max(bulkBuyCount,node.val);toast("Bulk buy: "+bulkBuyCount+"x per click!","#ff88cc");}
+  if(node.type==="cdreduce"){cdReduceMult*=node.val;toast("Consumable cooldowns reduced!","#44ffcc");}
+  if(node.type==="godmode"){
+    frenzyUnlocked=true;megaFrenzyUnlocked=true;prestigeUnlocked=true;buyAllUnlocked=true;
+    cashBonusMult*=2;prestigeTokenMult*=2;autoFrenzy=true;autoMegaFrenzy=true;bulkBuyCount=Math.max(bulkBuyCount,10);
+    clickValue*=2;for(var i=0;i<businesses.length;i++)businesses[i].mult*=2;
+    perkEffects.bizSpeedMult*=2;cdReduceMult*=0.5;comboLocked=true;combo=perkEffects.comboCap;
+    startRainbow(20);calcPerSec();toast("👑 GODMODE ACTIVATED! ALL SYSTEMS MAXED!","#ffd700");
+    spawnShockwave(W/2,H/2);spawnShockwave(W/3,H/3);spawnShockwave(2*W/3,2*H/3);
+  }
+  calcPerSec();
+}
+
+// Build HTML tree — called once on open and after each purchase
+// ── SKILL TREE — HTML div nodes, scroll viewport ──
+function reqsMet(node){
+  for(var i=0;i<node.req.length;i++) if(!treeNodes[node.req[i]].bought) return false;
+  return true;
+}
+
+function renderTree(){
+  var field=document.getElementById("tree-field");
+  // Remove old nodes/labels
+  var old=field.querySelectorAll(".tnode,.tnode-label");
+  for(var i=0;i<old.length;i++) old[i].parentNode.removeChild(old[i]);
+
+  // SVG connectors
+  var svg=document.getElementById("tree-svg");
+  var lines="";
+  for(var i=0;i<treeNodes.length;i++){
+    var node=treeNodes[i];
+    if(node.type==="timebank_pay") continue;
+    for(var j=0;j<node.req.length;j++){
+      var par=treeNodes[node.req[j]];
+      var active=node.bought&&par.bought;
+      lines+='<line x1="'+par.x+'" y1="'+par.y+'" x2="'+node.x+'" y2="'+node.y+'"'
+        +' stroke="'+(active?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.08)")+'"'
+        +' stroke-width="'+(active?2:1)+'"'
+        +' stroke-dasharray="'+(node.bought?"none":"6,6")+'" />';
+    }
+  }
+  svg.innerHTML=lines;
+
+  // Build nodes
+  for(var i=0;i<treeNodes.length;i++){
+    var node=treeNodes[i];
+    var isTimePay=node.type==="timebank_pay";
+    var timeBankOpen=isTimePay&&treeNodes[55].bought;
+    var met=isTimePay?timeBankOpen:reqsMet(node);
+    var afford=hustleTokens>=node.cost;
+
+    var btn=document.createElement("div");
+    btn.className="tnode"+(isTimePay?" timebank":"")+(node.bought?" bought":(met?" available":" locked"));
+    btn.style.left=node.x+"px";
+    btn.style.top=node.y+"px";
+    btn.style.setProperty("--nc",node.color);
+    if(!node.bought&&met&&afford) btn.style.borderColor=node.color;
+    if(!node.bought&&!met) btn.style.opacity="0.28";
+
+    var costTxt=(!isTimePay&&node.bought)?"✓":(node.cost+"⬡");
+    btn.innerHTML='<div class="tnode-icon">'+node.icon+'</div>'
+      +'<div class="tnode-cost" style="color:'+((!isTimePay&&node.bought)?"#fff":(afford?node.color:"#ff5555"))+'">'+costTxt+'</div>';
+
+    (function(n,b){
+      b.addEventListener("mouseenter",function(e){ showTreeTooltip(n,e); });
+      b.addEventListener("mousemove",function(e){
+        var tt=document.getElementById("tree-tooltip");
+        tt.style.left=Math.min(e.clientX+15,window.innerWidth-260)+"px";
+        tt.style.top=Math.max(e.clientY-50,4)+"px";
+      });
+      b.addEventListener("mouseleave",function(){ document.getElementById("tree-tooltip").style.display="none"; });
+      if(isTimePay||!n.bought){
+        b.addEventListener("click",function(e){ e.stopPropagation(); buyTreeNode(n.id); });
+      }
+    })(node,btn);
+    field.appendChild(btn);
+
+    // Label
+    var lbl=document.createElement("div");
+    lbl.className="tnode-label";
+    lbl.style.left=node.x+"px";
+    lbl.style.top=(node.y+32)+"px";
+    lbl.style.color=node.bought?"#888":(met?"#666":"#333");
+    var words=node.name.split(" ");
+    var half=Math.ceil(words.length/2);
+    lbl.innerHTML=words.slice(0,half).join(" ")+(words.length>1?"<br>"+words.slice(half).join(" "):"");
+    field.appendChild(lbl);
+  }
+}
+
+function showTreeTooltip(node,e){
+  var tt=document.getElementById("tree-tooltip");
+  var isRepeat=node.type==="timebank_pay";
+  var isTimeBankOpen=isRepeat&&treeNodes[55].bought;
+  var met=isRepeat?isTimeBankOpen:reqsMet(node);
+  document.getElementById("tt-name").textContent=node.icon+" "+node.name;
+  document.getElementById("tt-name").style.color=node.color;
+  document.getElementById("tt-desc").textContent=node.desc;
+  document.getElementById("tt-cost").textContent="Cost: "+node.cost+"⬡  (Have: "+Math.floor(hustleTokens)+"⬡)";
+  document.getElementById("tt-cost").style.color=hustleTokens>=node.cost?"#44ff88":"#ff5555";
+  var reqNames=node.req.map(function(r){return treeNodes[r].name;}).join(", ");
+  document.getElementById("tt-req").textContent=reqNames?"Requires: "+reqNames:"No requirements";
+  var status=(!isRepeat&&node.bought)?"✓ Already owned":(met?(hustleTokens>=node.cost?(isRepeat?"⏱️ Click to buy payout! (unlimited)":"Click to unlock!"):"Need more tokens"):(isRepeat?"Unlock Time Bank first":"Unlock required nodes first"));
+  document.getElementById("tt-status").textContent=status;
+  document.getElementById("tt-status").style.color=(!isRepeat&&node.bought)?"#44ff88":(met&&hustleTokens>=node.cost?"#ffcc44":"#ff5555");
+  tt.style.display="block";
+  tt.style.left=Math.min(e.clientX+15,window.innerWidth-260)+"px";
+  tt.style.top=Math.max(e.clientY-50,4)+"px";
+}
+
+function openTree(){
+  document.getElementById("tree-modal").className="open";
+  renderTree();
+  // Try multiple times with increasing delays to handle iframe paint timing
+  [100,300,600,1000].forEach(function(delay){
+    setTimeout(function(){
+      var scroll=document.getElementById("tree-scroll");
+      if(!scroll)return;
+      var vw=scroll.clientWidth;
+      if(vw>50){
+        // First Steps is at x:640. Center it.
+        scroll.scrollLeft=Math.max(0,640-Math.floor(vw/2));
+        scroll.scrollTop=40;
+      }
+    },delay);
+  });
+}
+function closeTree(){
+  document.getElementById("tree-modal").className="";
+  document.getElementById("tree-tooltip").style.display="none";
+}
+
+function openHelp(){ document.getElementById("help-modal").className="open"; }
+function closeHelp(){ document.getElementById("help-modal").className=""; }
+
+// Global tooltip — shown on hover over any panel item
+var _gtt=null;
+function showGTooltip(e,name,body,tagClass,tagText,hint){
+  var tt=document.getElementById("g-tooltip");
+  document.getElementById("gt-name").textContent=name;
+  document.getElementById("gt-body").textContent=body;
+  var tw=document.getElementById("gt-tag-wrap");
+  if(tagClass&&tagText){
+    tw.innerHTML='<span class="gt-tag '+tagClass+'">'+tagText+'</span>';
+  } else { tw.innerHTML=""; }
+  var gh=document.getElementById("gt-hint");
+  if(hint){ gh.textContent=hint; gh.style.display="block"; }
+  else { gh.style.display="none"; }
+  tt.style.display="block";
+  _posGTooltip(e);
+}
+function _posGTooltip(e){
+  var tt=document.getElementById("g-tooltip");
+  if(!tt||tt.style.display==="none")return;
+  var x=e.clientX+14,y=e.clientY-10;
+  if(x+230>window.innerWidth)x=e.clientX-240;
+  if(y+150>window.innerHeight)y=window.innerHeight-155;
+  tt.style.left=x+"px"; tt.style.top=Math.max(4,y)+"px";
+}
+function hideGTooltip(){ document.getElementById("g-tooltip").style.display="none"; }
+
+function updateUI(){
+  var mc=document.getElementById("money-display");
+  mc.textContent=fmt(money);
+  mc.style.color=rainbowActive?rainbowColor(t):(megaFrenzyActive?"#ff8800":"#44ff88");
+  mc.style.textShadow=rainbowActive?"0 0 18px "+rainbowColor(t):"none";
+  document.getElementById("net-worth").textContent="Total: "+fmt(totalEarned);
+  document.getElementById("per-sec").textContent=fmt(perSec*(1+cashBonusMult))+"/sec"+(prestigeMult>1?" [x"+prestigeMult.toFixed(1)+"]":"");
+  document.getElementById("hustle-tokens").textContent="⬡ "+Math.floor(hustleTokens)+" Hustle Tokens";
+  var preview=document.getElementById("prestige-preview");
+  if(!prestigeUnlocked){
+    var pct=Math.min(100,(totalEarned/1e9)*100).toFixed(1);
+    preview.textContent="Prestige unlocks at $1B ("+pct+"%)";
+    preview.style.color="#555";
+  } else {
+    var wouldGain=Math.floor(tokensForPrestige(totalEarned)*prestigeTokenMult);
+    if(wouldGain>0){
+      preview.textContent="Prestige now: +"+wouldGain+"⬡ token"+(wouldGain!==1?"s":"");
+      preview.style.color="#cc44ff";
+    } else {
+      preview.textContent="Reach $10M to prestige (+8⬡ at $1B, cube-root scaling)";
+      preview.style.color="#555";
+    }
+  }
+  document.getElementById("level-display").textContent="Lv"+playerLevel+" "+levels[Math.min(playerLevel-1,levels.length-1)];
+  var xb=document.getElementById("xp-bar");xb.style.width=Math.min(100,(xp/xpNeeded)*100)+"%";xb.style.background=rainbowActive?rainbowColor(t+1):"#44aaff";
+  var cd=document.getElementById("combo-display");
+  cd.textContent="x"+combo.toFixed(1);
+  if(combo>=perkEffects.comboCap)cd.style.color=rainbowColor(t);
+  else if(combo>6)cd.style.color="#ff4466";
+  else if(combo>3)cd.style.color="#ffcc44";
+  else cd.style.color="#777";
+  cd.style.fontSize=(18+Math.min(combo,10)*1.5)+"px";
+  cd.style.textShadow=combo>5?"0 0 10px "+cd.style.color:"none";
+  var curWindow=comboLocked?1:(comboWindowForLevel(combo)*perkEffects.comboTimerMult);
+  document.getElementById("combo-bar").style.width=comboLocked?"100%":Math.min(100,(comboTimer/curWindow)*100)+"%";
+  document.getElementById("combo-bar").style.background=combo>5?rainbowColor(t):"#ffcc44";
+  document.getElementById("click-value").textContent="+"+fmt(clickValue*clickMult*(frenzyActive?5:1)*(megaFrenzyActive?15:1)*globalMult*(comboUnlocked?combo:1)*prestigeMult*(1+cashBonusMult));
+  var fb=document.getElementById("frenzy-btn");fb.className=frenzyUnlocked?"unlocked":"";
+  var fd=document.getElementById("frenzy-cd");
+  if(!frenzyUnlocked){fd.textContent="🔒 Locked";fd.style.color="#444";}
+  else if(frenzyActive){fd.textContent=frenzyTimer.toFixed(1)+"s";fd.style.color="#ff4466";}
+  else if(frenzyCd>0){fd.textContent=frenzyCd.toFixed(1)+"s";fd.style.color="#555";}
+  else{fd.textContent="Ready!";fd.style.color="#ff4466";}
+  var mfb=document.getElementById("mega-frenzy-btn");mfb.className=megaFrenzyUnlocked?"unlocked":"";
+  var mfd=document.getElementById("mega-cd");
+  if(!megaFrenzyUnlocked){mfd.textContent="🔒 Locked";mfd.style.color="#444";}
+  else if(megaFrenzyActive){mfd.textContent=megaFrenzyTimer.toFixed(1)+"s";mfd.style.color="#ff8800";}
+  else if(megaFrenzyCd>0){mfd.textContent=megaFrenzyCd.toFixed(1)+"s";mfd.style.color="#555";}
+  else{mfd.textContent="Ready!";mfd.style.color="#ff8800";}
+  var pb=document.getElementById("prestige-btn");pb.className=prestigeUnlocked?"unlocked":"";
+  document.getElementById("prestige-label").textContent=prestigeUnlocked?"PRESTIGE":"🔒 Locked";
+  document.getElementById("prestige-label").style.color=prestigeUnlocked?"#cc44ff":"#444";
+  document.getElementById("prestige-count").textContent=prestigeCount>0?"x"+prestigeCount+" ("+prestigeMult.toFixed(1)+"x)":"";
+  var bb=document.getElementById("big-btn");
+  if(rainbowActive)bb.style.borderColor=rainbowColor(t);
+  else if(megaFrenzyActive)bb.style.borderColor="#ff8800";
+  else if(frenzyActive)bb.style.borderColor="#ff4466";
+  else bb.style.borderColor="#44ff88";
+  bb.style.boxShadow="0 0 "+(8+combo*3)+"px "+(rainbowActive?rainbowColor(t):(frenzyActive?"#ff4466":(megaFrenzyActive?"#ff8800":"rgba(68,255,136,0.4)")));
+  if(rainbowActive){document.getElementById("rainbow-overlay").style.background="linear-gradient("+t*25+"deg,hsla("+((t*80)%360)+",100%,50%,0.055),hsla("+((t*80+120)%360)+",100%,50%,0.04),hsla("+((t*80+240)%360)+",100%,50%,0.035))";}
+  var nextM=milestoneIdx<milestones.length?milestones[milestoneIdx]:milestones[milestones.length-1];
+  var prevM=milestoneIdx>0?milestones[milestoneIdx-1]:0;
+  document.getElementById("milestone-progress").style.width=Math.min(100,((totalEarned-prevM)/(nextM-prevM))*100)+"%";
+  document.getElementById("milestone-goal").textContent=fmt(nextM);
+  document.getElementById("milestone-progress").style.background=rainbowActive?rainbowColor(t+2):"#ffcc44";
+  document.getElementById("tree-tokens-hud").textContent="⬡ "+Math.floor(hustleTokens)+" Tokens";
+  // Show buy-all buttons only when unlocked
+  var baStyle=buyAllUnlocked?"inline-block":"none";
+  document.getElementById("upg-buyall-btn").style.display=baStyle;
+  document.getElementById("con-buyall-btn").style.display=baStyle;
+  document.getElementById("perk-buyall-btn").style.display=baStyle;
+}
+
+function renderAll(){renderBizList();renderUpgList();renderItems();renderPerks();}
+
+function renderBizList(){
+  var html="";
+  for(var i=0;i<businesses.length;i++){
+    var b=businesses[i],cost=bizCost(b),can=money>=cost;
+    var spd=perkEffects.bizSpeedMult,prog=b.owned>0?(b.timer/(b.interval/spd))*100:0;
+    var maxN=can?Math.floor(money/cost):0;
+    var ttBody="Earns "+fmt(b.baseIncome)+" per "+b.interval+"s per unit owned. Auto-pays on its own timer.";
+    var ttHint=b.owned>0?"Currently earning "+fmt(bizIncome(b))+" per payout ("+b.owned+" owned).":"Buy one to start earning passive income.";
+    html+='<div class="biz-row'+(can?"":" cant-afford")+'" onclick="buyBiz('+i+')" data-tt-name="'+b.icon+' '+b.name+'" data-tt-body="'+ttBody+'" data-tt-tag="gt-income" data-tt-tag-text="📈 Passive Income" data-tt-hint="'+ttHint+'">';
+    html+='<div class="biz-icon">'+b.icon+'</div><div class="biz-info"><div class="biz-name">'+b.name+'</div><div class="biz-owned">Owned: '+b.owned+'</div>';
+    if(b.owned>0)html+='<div class="biz-bar-wrap"><div class="biz-bar" style="width:'+prog+'%;background:'+b.color+'"></div></div>';
+    html+='</div><div class="biz-right">';
+    if(buyAllUnlocked&&can&&maxN>1)html+='<button class="biz-max-btn" onclick="event.stopPropagation();buyMaxBiz('+i+')">Max('+maxN+')</button>';
+    html+='<div class="biz-cost" style="color:'+(can?"#44ff88":"#443333")+'">'+fmt(cost)+'</div>';
+    if(b.owned>0)html+='<div class="biz-income">'+fmt(bizIncome(b))+'/'+(b.interval/spd).toFixed(1)+'s</div>';
+    html+='</div></div>';
+  }
+  document.getElementById("biz-list").innerHTML=html;
+}
+
+function renderUpgList(){
+  var html="";
+  for(var i=0;i<upgrades.length;i++){
+    var u=upgrades[i];
+    var ttTag=u.type==="click"?"gt-click":"gt-income";
+    var ttTagText=u.type==="click"?"👆 Click Buff":u.type==="all"?"✨ All Income":"📈 Business Buff";
+    var ttHint=u.type==="click"?"Only affects manual click earnings — not passive income.":u.type==="combo_unlock"?"Unlocks the combo multiplier. Without this, clicking has no combo bonus at all.":"Multiplies that specific business's payout. Must own 1 first.";
+    if(u.type==="all")ttHint="Multiplies ALL business income permanently.";
+    if(u.bought){html+='<button class="upg-btn upg-bought" disabled data-tt-name="✓ '+u.name+'" data-tt-body="'+u.desc+'" data-tt-tag="gt-income" data-tt-tag-text="✓ Active" data-tt-hint="Purchased and active — effect is permanently applied until prestige.">✓ '+u.name+'</button>';continue;}
+    var locked=u.reqIdx>=0&&businesses[u.reqIdx].owned<u.req,can=money>=u.cost&&!locked;
+    var reqNote=locked?"Requires owning "+businesses[u.reqIdx].name+" first.":"";
+    html+='<button class="upg-btn" '+(can?'onclick="buyUpgrade('+i+')"':'disabled')+' data-tt-name="'+u.name+'" data-tt-body="'+u.desc+(reqNote?" — "+reqNote:"")+'" data-tt-tag="'+ttTag+'" data-tt-tag-text="'+ttTagText+'" data-tt-hint="'+ttHint+'">'+u.name+'<span class="upg-cost">'+(locked?"Own "+businesses[u.reqIdx].name:fmt(u.cost))+'</span></button>';
+  }
+  document.getElementById("upg-list").innerHTML=html;
+}
+
+function renderItems(){
+  var html="";
+  html+='<div style="font-size:11px;color:#888;margin-bottom:5px">Click to use'+(bulkBuyCount>1?' — <b style="color:#ff88cc">'+bulkBuyCount+'x bulk buy</b> active':'')+(consumableTierUnlocked===0?' — <b style="color:#ff4444">Unlock Consumables I in the Skill Tree!</b>':'')+'</div>';
+  for(var i=0;i<consumables.length;i++){
+    var item=consumables[i];
+    var tierLocked=item.tier>consumableTierUnlocked;
+    var onCd=item.cdLeft>0,cantAfford=!tierLocked&&money<item.cost;
+    var cls="item-card"+(tierLocked?" cant-afford":(onCd?" on-cooldown":(cantAfford?" cant-afford":"")));
+    var bulkN=bulkBuyCount>1?Math.min(bulkBuyCount,money>=item.cost?Math.floor(money/item.cost):0):1;
+    var costDisplay=bulkBuyCount>1&&bulkN>1&&!tierLocked?"x"+bulkN+" = "+fmt(item.cost*bulkN):fmt(item.cost);
+    var isClick=item.effect==="click3x"||item.effect==="adrenaline";
+    var isIncome=item.effect==="income2x"||item.effect==="clone"||item.effect==="diamond";
+    var isBoth=item.effect==="gold";
+    var isInstant=item.effect==="timewarp"||item.effect==="jackpot"||item.effect==="lucky"||item.effect==="omegawarp"||item.effect==="cdresetall";
+    var tagCls=isClick?"gt-click":isIncome?"gt-income":isBoth?"gt-both":"gt-passive";
+    var tagTxt=isClick?"👆 Click Buff":isIncome?"📈 Business Buff":isBoth?"✨ Everything":isInstant?"💥 Instant Cash":"⚡ Special";
+    var ttHint=tierLocked?"Unlock Consumables "+item.tier+" in the Skill Tree to unlock this tier.":isClick?"Only boosts manual tapping — not passive business income.":isIncome?"Multiplies all business earnings.":isBoth?"Multiplies both clicks AND income — best value.":isInstant?"Fires once immediately — instant lump of cash.":"Special effect.";
+    html+='<div class="'+cls+'" onclick="useConsumable('+i+')" data-tt-name="'+item.icon+' '+item.name+' (Tier '+item.tier+')" data-tt-body="'+(tierLocked?"🔒 Requires Consumables "+item.tier+" upgrade to unlock.":item.desc+(item.effectDur>0?" for "+item.effectDur+"s":"")+'. Cooldown: '+Math.round(getEffectiveCd(item))+'s.')+'" data-tt-tag="'+tagCls+'" data-tt-tag-text="'+(tierLocked?"🔒 Tier "+item.tier+" Locked":tagTxt)+'" data-tt-hint="'+ttHint+'">';
+    html+='<div class="item-header"><div class="item-name" style="color:'+(tierLocked?"#555":item.color)+'">'+item.icon+' '+item.name+'</div>';
+    html+='<div class="item-cost" style="color:'+(tierLocked?"#333":cantAfford?"#443333":"#44ff88")+'">'+costDisplay+'</div></div>';
+    if(tierLocked){
+      html+='<div class="item-desc" style="color:#444">🔒 Unlocks with <b style="color:#888">Consumables '+item.tier+'</b> upgrade</div>';
+    } else {
+      html+='<div class="item-desc">'+item.desc+(item.effectDur>0?" ("+item.effectDur+"s)":"")+'</div>';
+      html+='<div class="item-meta"><span>CD: '+Math.round(getEffectiveCd(item))+'s</span><span>Tier '+item.tier+'</span>'+(item.count>0?'<span style="color:#ffcc44">Used: '+item.count+'x</span>':'')+'</div>';
+      if(onCd){var prog=((getEffectiveCd(item)-item.cdLeft)/getEffectiveCd(item))*100;html+='<div class="item-cd-bar"><div class="item-cd-fill" style="width:'+prog+'%;background:'+item.color+'"></div></div><div style="font-size:10px;color:'+item.color+';margin-top:2px">⏳ '+item.cdLeft.toFixed(0)+'s</div>';}
+    }
+    html+='</div>';
+  }
+  document.getElementById("items-list").innerHTML=html;
+}
+
+function renderPerks(){
+  // Split into unlocked (available or owned) and locked, sort each by cost
+  var unlocked=[], locked=[];
+  for(var i=0;i<perks.length;i++){
+    if(perkReqMet(perks[i])) unlocked.push(i);
+    else locked.push(i);
+  }
+  unlocked.sort(function(a,b){return perks[a].cost-perks[b].cost;});
+  locked.sort(function(a,b){return perks[a].cost-perks[b].cost;});
+  var order=unlocked.concat(locked);
+
+  var html="";
+  for(var oi=0;oi<order.length;oi++){
+    var i=order[oi];
+    var p=perks[i];
+    var reqMet=perkReqMet(p);
+    var can=!p.owned&&money>=p.cost&&reqMet;
+    var reqName=(!reqMet&&p.req>=0&&treeNodes[p.req])?treeNodes[p.req].name:"";
+    var ttHint=!reqMet?"Requires '"+reqName+"' in the Skill Tree first.":p.type==="baseincome"?"Adds flat $/sec regardless of businesses owned.":p.type==="costreduce"?"Makes ALL future business purchases cheaper.":p.type==="upgradediscount"?"Reduces the cost of all unowned upgrades.":"Permanent upgrade — resets on prestige.";
+    var locked2=!p.owned&&!reqMet;
+    html+='<div class="perk-card'+(p.owned?" perk-owned":"")+(locked2?" cant-afford":"")+'" '
+      +((!p.owned&&reqMet)?'onclick="buyPerk('+i+')"':'')
+      +' data-tt-name="'+(p.owned?"✓ ":locked2?"🔒 ":"")+p.name+'"'
+      +' data-tt-body="'+(locked2?"🔒 Requires \'"+reqName+"\' in the Skill Tree to unlock this perk.":p.desc)+'"'
+      +' data-tt-tag="gt-passive"'
+      +' data-tt-tag-text="'+(p.owned?"✓ Owned":locked2?"🔒 Locked":"💎 Perk")+'"'
+      +' data-tt-hint="'+ttHint+(reqMet?" Resets on prestige.":"")+'">';
+    html+='<div class="perk-name">'+(p.owned?"✓ ":locked2?"🔒 ":"")+p.name+'</div>';
+    html+='<div class="perk-desc">'+(locked2?"Requires: <b style=\'color:#888\'>"+reqName+"</b>":p.desc)+'</div>';
+    if(!p.owned){
+      if(locked2) html+='<div class="perk-cost" style="color:#333">🔒 Locked</div>';
+      else html+='<div class="perk-cost" style="color:'+(can?"#44ff88":"#443333")+'">'+fmt(p.cost)+'</div>';
+    }
+    html+='</div>';
+  }
+  document.getElementById("perks-list").innerHTML=html;
+}
+
+// Wire up delegated tooltip events on the bottom panel once
+(function(){
+  var panel=document.getElementById("bottom-panel");
+  panel.addEventListener("mouseover",function(e){
+    var el=e.target;
+    while(el&&el!==panel){
+      if(el.dataset&&el.dataset.ttName){
+        showGTooltip(e,el.dataset.ttName,el.dataset.ttBody,el.dataset.ttTag,el.dataset.ttTagText,el.dataset.ttHint||null);
+        return;
+      }
+      el=el.parentElement;
+    }
+    hideGTooltip();
+  });
+  panel.addEventListener("mousemove",function(e){ _posGTooltip(e); });
+  panel.addEventListener("mouseleave",function(){ hideGTooltip(); });
+})();
+
+var lastDirtyTick=0;
+function loop(){
+  var now=Date.now(),dt=Math.min((now-lastTime)/1000,0.1);
+  lastTime=now;t+=dt;
+  // Mark lists dirty every 2 seconds so affordability colours stay current
+  if(now-lastDirtyTick>2000){lastDirtyTick=now;listsDirty=true;}
+  if(comboUnlocked && !comboLocked){
+    if(comboTimer>0){
+      comboTimer-=dt;
+      if(comboTimer<=0){
+        comboTimer=0;
+        // Drop combo by 1 step instead of full decay — feels more like fighting to hold it
+        if(combo>1){
+          combo=Math.max(1,combo-1);
+          // Reset timer to the window for the new (lower) combo level
+          comboTimer=comboWindowForLevel(combo)*perkEffects.comboTimerMult;
+        }
+      }
+    }
+  }
+  // End max-combo bonus as soon as combo drops below cap
+  if(comboMaxActive && (!comboUnlocked || combo<perkEffects.comboCap)){
+    comboMaxActive=false;
+    globalMult/=COMBO_BONUS_MULT;
+    // Only kill rainbow if it was solely held by the combo bonus (timer > 900 = we set it to 999)
+    if(rainbowTimer>900){
+      rainbowActive=false;rainbowTimer=0;
+      document.getElementById("rainbow-overlay").style.opacity="0";
+      document.getElementById("rainbow-overlay").style.background="none";
+      removeEffect("🌈 RAINBOW");
+    }
+    removeEffect("🔥 MAX COMBO! 3x ALL");
+    toast("Combo dropped — bonus ended","#888");
+  }
+  if(frenzyActive){frenzyTimer-=dt;if(frenzyTimer<=0){frenzyActive=false;frenzyCd=frenzyCdMax;removeEffect("⚡ FRENZY 5x");}}
+  if(frenzyCd>0)frenzyCd-=dt;
+  if(megaFrenzyActive){megaFrenzyTimer-=dt;if(megaFrenzyTimer<=0){megaFrenzyActive=false;megaFrenzyCd=megaFrenzyCdMax;removeEffect("🔥 MEGA 15x");}}
+  if(megaFrenzyCd>0)megaFrenzyCd-=dt;
+  if(rainbowActive){rainbowTimer-=dt;if(rainbowTimer<=0){rainbowActive=false;document.getElementById("rainbow-overlay").style.opacity="0";document.getElementById("rainbow-overlay").style.background="none";removeEffect("🌈 RAINBOW");}}
+  for(var i=0;i<consumables.length;i++){
+    if(consumables[i].cdLeft>0){
+      var prev=consumables[i].cdLeft;
+      consumables[i].cdLeft=Math.max(0,consumables[i].cdLeft-dt);
+      if(prev>0&&consumables[i].cdLeft===0)listsDirty=true;
+    }
+  }
+  if(autoFrenzy&&frenzyUnlocked&&frenzyCd<=0&&!frenzyActive)activateFrenzy();
+  if(autoMegaFrenzy&&megaFrenzyUnlocked&&megaFrenzyCd<=0&&!megaFrenzyActive)activateMegaFrenzy();
+  if(autoClickRate>0){
+    autoClickTimer+=dt;var ai=1/autoClickRate;
+    while(autoClickTimer>=ai){autoClickTimer-=ai;var base=clickValue*clickMult*(frenzyActive?5:1)*(megaFrenzyActive?15:1)*globalMult*prestigeMult;var earned=addMoney(base*combo);if(Math.random()<0.12)floaties.push({x:W*0.45+Math.random()*W*0.08,y:H/2,vy:-1.6,life:0.7,text:"+"+fmt(earned),color:"#44aaff",sz:8});}
+  }
+  if(autoBuyActive){autoBuyTimer+=dt;if(autoBuyTimer>=10){autoBuyTimer=0;var ch=-1,cc=Infinity;for(var i=0;i<businesses.length;i++){var cost=bizCost(businesses[i]);if(cost<cc&&money>=cost){cc=cost;ch=i;}}if(ch>=0)buyBiz(ch);}}
+  if(autoUpgradeActive){autoUpgradeTimer+=dt;if(autoUpgradeTimer>=15){autoUpgradeTimer=0;for(var i=0;i<upgrades.length;i++){var u=upgrades[i];if(!u.bought&&money>=u.cost&&(u.reqIdx<0||businesses[u.reqIdx].owned>=u.req)){buyUpgrade(i);break;}}}}
+  for(var i=0;i<businesses.length;i++){
+    var b=businesses[i];if(b.owned<=0)continue;
+    b.timer+=dt*perkEffects.bizSpeedMult;
+    if(b.timer>=b.interval){b.timer-=b.interval;var earned=bizIncome(b);addMoney(earned);if(Math.random()<0.18)floaties.push({x:25+Math.random()*(W*0.25),y:H-220,vy:-1.3,life:1,text:"+"+fmt(earned)+" "+b.icon,color:rainbowActive?rainbowColor(t):b.color,sz:9});}
+  }
+  if(perkEffects.basePassive>0)addMoney(perkEffects.basePassive*dt);
+  for(var i=floaties.length-1;i>=0;i--){var f=floaties[i];f.y+=f.vy;f.vy*=0.97;f.life-=0.02;if(f.life<=0)floaties.splice(i,1);}
+  for(var i=sparks.length-1;i>=0;i--){var s=sparks[i];s.x+=s.vx;s.y+=s.vy;s.vy+=0.1;s.life-=0.035;if(s.life<=0)sparks.splice(i,1);}
+  for(var i=rainbowP.length-1;i>=0;i--){var p=rainbowP[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.06;p.life-=0.025;if(p.life<=0)rainbowP.splice(i,1);}
+  for(var i=shockwaves.length-1;i>=0;i--){var sw=shockwaves[i];sw.r+=7;sw.life-=0.03;if(sw.life<=0)shockwaves.splice(i,1);}
+  ctx.clearRect(0,0,W,H);
+  for(var i=0;i<shockwaves.length;i++){var sw=shockwaves[i];ctx.strokeStyle=rainbowActive?rainbowColor(t+i*0.3):"rgba(255,255,255,"+sw.life*0.35+")";ctx.lineWidth=2*sw.life;ctx.beginPath();ctx.arc(sw.x,sw.y,sw.r,0,6.28);ctx.stroke();}
+  for(var i=0;i<rainbowP.length;i++){var p=rainbowP[i];ctx.globalAlpha=p.life*0.85;ctx.fillStyle="hsl("+p.hue+",100%,65%)";ctx.beginPath();ctx.arc(p.x,p.y,p.sz*p.life,0,6.28);ctx.fill();}
+  for(var i=0;i<sparks.length;i++){var s=sparks[i];ctx.globalAlpha=s.life*0.85;ctx.fillStyle=s.color;ctx.beginPath();ctx.arc(s.x,s.y,s.sz*s.life,0,6.28);ctx.fill();}
+  for(var i=0;i<floaties.length;i++){var f=floaties[i];ctx.globalAlpha=f.life;ctx.fillStyle=f.color||"#44ff88";ctx.font="bold "+(f.sz||11)+"px sans-serif";ctx.textAlign="left";ctx.fillText(f.text,f.x,f.y);}
+  ctx.globalAlpha=1;
+  // Update biz progress bars in-place each frame (cheap, no DOM rebuild)
+  var bizBars=document.querySelectorAll(".biz-bar");
+  for(var i=0;i<businesses.length;i++){
+    var b=businesses[i];
+    if(b.owned>0&&bizBars[i]){
+      var spd=perkEffects.bizSpeedMult;
+      bizBars[i].style.width=Math.min(100,(b.timer/(b.interval/spd))*100)+"%";
+    }
+  }
+  // Only rebuild full lists when something structural changed
+  if(listsDirty){listsDirty=false;renderAll();}
+  updateUI();renderEffects();
+  requestAnimationFrame(loop);
+}
+
+// ── SAVE / LOAD SYSTEM ──
+var SAVE_KEY_PREFIX = "hustlegame_save_";
+var NUM_SLOTS = 5;
+var saveMsg_timer = null;
+
+function saveState(){
+  // v3: all arrays saved by NAME, not index — survives additions/reorderings in updates
+  var bizMap={}, upgMap={}, perkMap={}, conMap={}, treeMap={};
+  for(var i=0;i<businesses.length;i++) bizMap[businesses[i].name]={owned:businesses[i].owned,mult:businesses[i].mult};
+  for(var i=0;i<upgrades.length;i++) upgMap[upgrades[i].name]={bought:upgrades[i].bought};
+  for(var i=0;i<perks.length;i++) perkMap[perks[i].name]={owned:perks[i].owned};
+  for(var i=0;i<consumables.length;i++) conMap[consumables[i].name]={cdLeft:consumables[i].cdLeft,count:consumables[i].count};
+  for(var i=0;i<treeNodes.length;i++) treeMap[treeNodes[i].name]={bought:treeNodes[i].bought};
+  return {
+    v:3,
+    money:money, totalEarned:totalEarned,
+    xp:xp, xpNeeded:xpNeeded, playerLevel:playerLevel,
+    combo:combo, comboTimer:comboTimer, comboUnlocked:comboUnlocked,
+    hustleTokens:hustleTokens, prestigeCount:prestigeCount, prestigeMult:prestigeMult,
+    prestigeBaseMult:prestigeBaseMult, prestigeTokenMult:prestigeTokenMult,
+    milestoneIdx:milestoneIdx, prestigeUnlocked:prestigeUnlocked,
+    frenzyUnlocked:frenzyUnlocked, megaFrenzyUnlocked:megaFrenzyUnlocked,
+    buyAllUnlocked:buyAllUnlocked, consumableTierUnlocked:consumableTierUnlocked,
+    frenzyCd:frenzyCd, frenzyCdMax:frenzyCdMax, frenzyDur:frenzyDur,
+    megaFrenzyCd:megaFrenzyCd, megaFrenzyCdMax:megaFrenzyCdMax,
+    clickValue:clickValue, clickMult:clickMult, incomeBoost:incomeBoost,
+    globalMult:globalMult, cashBonusMult:cashBonusMult, cdReduceMult:cdReduceMult,
+    bulkBuyCount:bulkBuyCount, autoClickRate:autoClickRate,
+    autoBuyActive:autoBuyActive, autoUpgradeActive:autoUpgradeActive,
+    autoFrenzy:autoFrenzy, autoMegaFrenzy:autoMegaFrenzy,
+    comboLocked:comboLocked,
+    clickChainChance:clickChainChance, clickChainCount:clickChainCount,
+    perkEffects:JSON.parse(JSON.stringify(perkEffects)),
+    businesses:bizMap, upgrades:upgMap, perks:perkMap,
+    consumables:conMap, treeNodes:treeMap,
+    ts:Date.now()
+  };
+}
+
+function loadState(s){
+  if(!s)return false;
+  // Accept v3 saves only; v2 saves get a friendly rejection message
+  if(s.v===2){return 'v2';}
+  if(s.v!==3)return false;
+
+  money=s.money||0; totalEarned=s.totalEarned||0;
+  xp=s.xp||0; xpNeeded=s.xpNeeded||100; playerLevel=s.playerLevel||1;
+  combo=s.combo||1; comboTimer=s.comboTimer||0; comboUnlocked=!!s.comboUnlocked;
+  hustleTokens=s.hustleTokens||0; prestigeCount=s.prestigeCount||0;
+  prestigeMult=s.prestigeMult||1; prestigeBaseMult=s.prestigeBaseMult||1.5;
+  prestigeTokenMult=s.prestigeTokenMult||1;
+  milestoneIdx=s.milestoneIdx||0; prestigeUnlocked=!!s.prestigeUnlocked;
+  frenzyUnlocked=!!s.frenzyUnlocked; megaFrenzyUnlocked=!!s.megaFrenzyUnlocked;
+  buyAllUnlocked=!!s.buyAllUnlocked; consumableTierUnlocked=s.consumableTierUnlocked||0;
+  frenzyCd=s.frenzyCd||0; frenzyCdMax=s.frenzyCdMax||45; frenzyDur=s.frenzyDur||8;
+  megaFrenzyCd=s.megaFrenzyCd||0; megaFrenzyCdMax=s.megaFrenzyCdMax||120;
+  clickValue=s.clickValue||1; clickMult=s.clickMult||1;
+  incomeBoost=s.incomeBoost||1; globalMult=s.globalMult||1;
+  cashBonusMult=s.cashBonusMult||0; cdReduceMult=s.cdReduceMult||1;
+  bulkBuyCount=s.bulkBuyCount||1; autoClickRate=s.autoClickRate||0;
+  autoBuyActive=!!s.autoBuyActive; autoUpgradeActive=!!s.autoUpgradeActive;
+  autoFrenzy=!!s.autoFrenzy; autoMegaFrenzy=!!s.autoMegaFrenzy;
+  comboLocked=!!s.comboLocked; comboMaxActive=false;
+  clickChainChance=s.clickChainChance||0; clickChainCount=s.clickChainCount||2;
+  if(s.perkEffects) for(var k in s.perkEffects) perkEffects[k]=s.perkEffects[k];
+
+  // Restore by name — new items added in updates simply start at default (not owned/bought)
+  if(s.businesses) for(var i=0;i<businesses.length;i++){
+    var d=s.businesses[businesses[i].name];
+    if(d){businesses[i].owned=d.owned||0;businesses[i].mult=d.mult||1;}
+    businesses[i].timer=0;
+  }
+  if(s.upgrades) for(var i=0;i<upgrades.length;i++){
+    var d=s.upgrades[upgrades[i].name];
+    if(d) upgrades[i].bought=!!d.bought;
+  }
+  if(s.perks) for(var i=0;i<perks.length;i++){
+    var d=s.perks[perks[i].name];
+    if(d) perks[i].owned=!!d.owned;
+  }
+  if(s.consumables) for(var i=0;i<consumables.length;i++){
+    var d=s.consumables[consumables[i].name];
+    if(d){consumables[i].cdLeft=d.cdLeft||0;consumables[i].count=d.count||0;}
+  }
+  if(s.treeNodes) for(var i=0;i<treeNodes.length;i++){
+    var d=s.treeNodes[treeNodes[i].name];
+    if(d) treeNodes[i].bought=!!d.bought;
+  }
+  document.getElementById("combo-zone").style.display=comboUnlocked?"flex":"none";
+  calcPerSec();
+  return true;
+}
+
+function slotKey(slot){ return SAVE_KEY_PREFIX+"slot"+slot; }
+
+function saveToSlot(slot){
+  try{
+    var data=JSON.stringify(saveState());
+    localStorage.setItem(slotKey(slot),data);
+    showSaveMsg("✓ Saved to Slot "+slot+"!","#44ff88");
+    renderSaveSlots();
+  }catch(e){ showSaveMsg("Save failed: "+e.message,"#ff4444"); }
+}
+
+function loadFromSlot(slot){
+  try{
+    var raw=localStorage.getItem(slotKey(slot));
+    if(!raw){showSaveMsg("Slot "+slot+" is empty.","#ff4444");return;}
+    var data=JSON.parse(raw);
+    var result=loadState(data);
+    if(result===true){
+      showSaveMsg("✓ Loaded Slot "+slot+"!","#44aaff");
+      listsDirty=true; updateUI(); renderAll();
+      if(document.getElementById("tree-modal").className==="open") renderTree();
+    } else if(result==='v2'){
+      showSaveMsg("Slot "+slot+" is an old save format — please start a new game.","#ffcc44");
+    } else {
+      showSaveMsg("Save data is incompatible.","#ff4444");
+    }
+  }catch(e){ showSaveMsg("Load failed: "+e.message,"#ff4444"); }
+}
+
+function deleteSlot(slot){
+  localStorage.removeItem(slotKey(slot));
+  showSaveMsg("Slot "+slot+" deleted.","#888");
+  renderSaveSlots();
+}
+
+function showSaveMsg(msg,color){
+  var el=document.getElementById("save-msg");
+  el.textContent=msg; el.style.color=color||"#44ff88";
+  if(saveMsg_timer)clearTimeout(saveMsg_timer);
+  saveMsg_timer=setTimeout(function(){el.textContent="";},3000);
+}
+
+function slotNickKey(slot){ return SAVE_KEY_PREFIX+"nick"+slot; }
+
+function getSlotNick(slot){
+  return localStorage.getItem(slotNickKey(slot))||"";
+}
+
+function setSlotNick(slot,name){
+  if(name.trim()) localStorage.setItem(slotNickKey(slot),name.trim().slice(0,24));
+  else localStorage.removeItem(slotNickKey(slot));
+}
+
+function slotSummary(slot){
+  try{
+    var raw=localStorage.getItem(slotKey(slot));
+    if(!raw)return null;
+    var d=JSON.parse(raw);
+    if(!d||d.v!==3)return null;
+    var date=new Date(d.ts);
+    var dateStr=date.toLocaleDateString()+" "+date.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+    return {
+      label:"Lv"+d.playerLevel+" — "+fmtSave(d.totalEarned)+" earned — Prestige #"+d.prestigeCount,
+      date:dateStr,
+      totalEarned:d.totalEarned||0
+    };
+  }catch(e){return null;}
+}
+
+function fmtSave(n){
+  if(!n||n<1000)return"$"+(n||0).toFixed(0);
+  var s=["","K","M","B","T","Qa"];
+  for(var i=s.length-1;i>=1;i--){var v=Math.pow(1000,i);if(n>=v)return"$"+(n/v).toFixed(1)+s[i];}
+  return"$"+n.toFixed(0);
+}
+
+function renderSaveSlots(){
+  var html="";
+  for(var i=1;i<=NUM_SLOTS;i++){
+    var info=slotSummary(i);
+    var nick=getSlotNick(i);
+    var slotTitle=nick?('<b style="color:#44aaff">'+nick+'</b>'):'Slot '+i;
+    html+='<div class="save-row" style="flex-wrap:wrap;gap:4px;">';
+    html+='<span class="save-slot-label" style="width:auto;">'+slotTitle+'</span>';
+    if(info){
+      html+='<span class="save-slot-info filled" style="flex:1;min-width:120px;"><span style="font-size:10px">'+info.label+'</span><br><span style="color:#555;font-size:10px">'+info.date+'</span></span>';
+    } else {
+      html+='<span class="save-slot-info" style="flex:1;">Empty</span>';
+    }
+    html+='<div style="display:flex;gap:4px;flex-shrink:0;">';
+    html+='<button class="save-action-btn green" onclick="saveToSlot('+i+')">Save</button>';
+    if(info){
+      html+='<button class="save-action-btn blue" onclick="loadFromSlot('+i+')">Load</button>';
+      html+='<button class="save-action-btn" style="color:#aaa;" onclick="startRename('+i+')" title="Rename">✏️</button>';
+      html+='<button class="save-action-btn red" onclick="deleteSlot('+i+')">✕</button>';
+    }
+    html+='</div>';
+    // Inline rename input (hidden by default)
+    html+='<div id="rename-row-'+i+'" style="display:none;width:100%;display:none;gap:6px;margin-top:4px;">';
+    html+='<input id="rename-input-'+i+'" class="save-name-input" type="text" maxlength="24" placeholder="Enter save name..." value="'+nick+'" style="flex:1;width:auto;" />';
+    html+='<button class="save-action-btn green" onclick="confirmRename('+i+')">✓</button>';
+    html+='<button class="save-action-btn" onclick="cancelRename('+i+')">✕</button>';
+    html+='</div>';
+    html+='</div>';
+  }
+  document.getElementById("save-slots").innerHTML=html;
+}
+
+function startRename(slot){
+  var row=document.getElementById("rename-row-"+slot);
+  if(row){row.style.display="flex";document.getElementById("rename-input-"+slot).focus();}
+}
+function cancelRename(slot){
+  var row=document.getElementById("rename-row-"+slot);
+  if(row)row.style.display="none";
+}
+function confirmRename(slot){
+  var input=document.getElementById("rename-input-"+slot);
+  if(input){setSlotNick(slot,input.value);renderSaveSlots();showSaveMsg("Slot "+slot+" renamed!","#44aaff");}
+}
+
+// ── WIPE PROGRESS ──
+function showWipeConfirm(){
+  document.getElementById("wipe-confirm").style.display="block";
+  document.getElementById("wipe-btn").style.display="none";
+}
+function cancelWipe(){
+  document.getElementById("wipe-confirm").style.display="none";
+  document.getElementById("wipe-btn").style.display="block";
+}
+function confirmWipe(){
+  // Wipe all localStorage for this game
+  for(var i=1;i<=NUM_SLOTS;i++) localStorage.removeItem(slotKey(i));
+  localStorage.removeItem(SAVE_KEY_PREFIX+"autosave");
+  // Reset all game state to defaults
+  money=0;totalEarned=0;xp=0;xpNeeded=100;playerLevel=1;
+  combo=1;comboTimer=0;comboUnlocked=false;comboLocked=false;comboMaxActive=false;
+  hustleTokens=0;prestigeCount=0;prestigeMult=1;prestigeBaseMult=1.5;prestigeTokenMult=1;
+  milestoneIdx=0;prestigeUnlocked=false;frenzyUnlocked=false;megaFrenzyUnlocked=false;
+  buyAllUnlocked=false;consumableTierUnlocked=0;
+  frenzyCd=0;frenzyCdMax=45;frenzyDur=8;megaFrenzyCd=0;megaFrenzyCdMax=120;
+  frenzyActive=false;megaFrenzyActive=false;frenzyTimer=0;megaFrenzyTimer=0;
+  clickValue=1;clickMult=1;incomeBoost=1;globalMult=1;cashBonusMult=0;cdReduceMult=1;
+  bulkBuyCount=1;autoClickRate=0;autoBuyActive=false;autoUpgradeActive=false;
+  autoFrenzy=false;autoMegaFrenzy=false;
+  clickChainChance=0;clickChainCount=2;
+  perkEffects={comboCap:8,comboTimerMult:1,luckyBoost:1,rainbowMult:1,costReduce:1,basePassive:0,bizSpeedMult:1};
+  for(var i=0;i<businesses.length;i++){businesses[i].owned=0;businesses[i].timer=0;businesses[i].mult=1;}
+  for(var i=0;i<upgrades.length;i++)upgrades[i].bought=false;
+  for(var i=0;i<perks.length;i++)perks[i].owned=false;
+  for(var i=0;i<consumables.length;i++){consumables[i].cdLeft=0;consumables[i].count=0;}
+  for(var i=0;i<treeNodes.length;i++)treeNodes[i].bought=false;
+  document.getElementById("combo-zone").style.display="none";
+  rainbowActive=false;rainbowTimer=0;
+  document.getElementById("rainbow-overlay").style.opacity="0";
+  effectList={};renderEffects();
+  calcPerSec();listsDirty=true;
+  cancelWipe();
+  closeSave();
+  toast("Progress wiped. Starting fresh!","#ff4444");
+  updateUI();renderAll();
+}
+
+// ── CHECKSUM — simple hash to detect tampering ──
+// djb2-style hash over the JSON string
+function computeChecksum(str){
+  var h=5381;
+  for(var i=0;i<str.length;i++){
+    h=((h<<5)+h)^str.charCodeAt(i);
+    h=h&h; // keep 32-bit
+  }
+  // XOR with a secret salt so it's not trivially reproducible
+  h=h^0xDEADF00D;
+  return(h>>>0).toString(16).padStart(8,"0");
+}
+
+function exportSave(){
+  try{
+    var data=JSON.stringify(saveState());
+    var checksum=computeChecksum(data);
+    var payload=JSON.stringify({d:data,c:checksum});
+    var encoded=btoa(unescape(encodeURIComponent(payload)));
+    // Copy to clipboard
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(encoded).then(function(){
+        showSaveMsg("✓ Save string copied to clipboard!","#44ff88");
+      }).catch(function(){fallbackCopy(encoded);});
+    } else {
+      fallbackCopy(encoded);
+    }
+  }catch(e){showSaveMsg("Export failed: "+e.message,"#ff4444");}
+}
+
+function fallbackCopy(text){
+  // Create a temporary textarea to copy from
+  var ta=document.createElement("textarea");
+  ta.value=text;
+  ta.style.position="fixed";ta.style.opacity="0";
+  document.body.appendChild(ta);
+  ta.select();
+  try{document.execCommand("copy");showSaveMsg("✓ Save string copied!","#44ff88");}
+  catch(e){
+    // If clipboard fails, show the string so user can copy manually
+    document.getElementById("import-area").style.display="block";
+    document.getElementById("import-text").value=text;
+    showSaveMsg("Clipboard blocked — copy the string manually from the box below.","#ffcc44");
+  }
+  document.body.removeChild(ta);
+}
+
+function showImportBox(){
+  document.getElementById("import-area").style.display="block";
+  document.getElementById("import-text").value="";
+  document.getElementById("import-text").focus();
+}
+function hideImportBox(){
+  document.getElementById("import-area").style.display="none";
+  document.getElementById("import-text").value="";
+}
+
+function importSave(){
+  try{
+    var encoded=document.getElementById("import-text").value.trim();
+    if(!encoded){showSaveMsg("Paste a save string first.","#ff4444");return;}
+    var payload=JSON.parse(decodeURIComponent(escape(atob(encoded))));
+    if(!payload||!payload.d||!payload.c){
+      showSaveMsg("❌ Invalid save string.","#ff4444");return;
+    }
+    // Verify checksum — reject if tampered
+    var expectedChecksum=computeChecksum(payload.d);
+    if(expectedChecksum!==payload.c){
+      showSaveMsg("❌ Save string has been modified and cannot be loaded.","#ff4444");
+      return;
+    }
+    var data=JSON.parse(payload.d);
+    var result=loadState(data);
+    if(result===true){
+      hideImportBox();
+      showSaveMsg("✓ Save imported successfully!","#44ff88");
+      listsDirty=true;updateUI();renderAll();
+      if(document.getElementById("tree-modal").className==="open")renderTree();
+    } else if(result==='v2'){
+      showSaveMsg("❌ This is an old save format and can't be imported.","#ffcc44");
+    } else {
+      showSaveMsg("❌ Save version is incompatible.","#ff4444");
+    }
+  }catch(e){showSaveMsg("❌ Import failed — string may be corrupted.","#ff4444");}
+}
+
+function openSave(){ document.getElementById("save-modal").className="open"; renderSaveSlots(); }
+function closeSave(){ document.getElementById("save-modal").className=""; }
+
+// ── LEADERBOARD ──
+// ── GLOBAL LEADERBOARD via npoint.io ──
+var LB_URL="https://corsproxy.io/?https://api.npoint.io/38273609a166d56da096";
+var LB_LINK_STORE="hustle_lb_link";
+var lbLinkedSlot=null;
+var lbLinkedName=null;
+var lbData=[];
+
+// Load linked slot from localStorage
+(function(){
+  try{
+    var raw=localStorage.getItem(LB_LINK_STORE);
+    if(raw){var d=JSON.parse(raw);lbLinkedSlot=d.slot||null;lbLinkedName=d.name||null;}
+  }catch(e){}
+})();
+
+function openLeaderboard(){
+  document.getElementById("lb-modal").className="open";
+  populateSlotSelect();
+  updateLinkedInfo();
+  loadLeaderboard();
+}
+function closeLeaderboard(){ document.getElementById("lb-modal").className=""; }
+function lbStatus(msg,color){
+  var el=document.getElementById("lb-status");
+  if(!el)return;
+  el.textContent=msg;el.style.color=color||"#555";
+  setTimeout(function(){if(el.textContent===msg)el.textContent="";},4000);
+}
+
+function populateSlotSelect(){
+  var sel=document.getElementById("lb-slot-select");
+  if(!sel)return;
+  var html='<option value="">— Select a slot —</option>';
+  if(totalEarned>0)html+='<option value="current"'+(lbLinkedSlot==="current"?" selected":"")+'>Current Run ('+fmtSave(totalEarned)+')</option>';
+  for(var i=1;i<=NUM_SLOTS;i++){
+    var info=slotSummary(i);
+    var nick=getSlotNick(i);
+    if(info){
+      var lbl=(nick||"Slot "+i)+" — "+fmtSave(info.totalEarned);
+      html+='<option value="'+i+'"'+(lbLinkedSlot==i?" selected":"")+'>'+lbl+'</option>';
+    }
+  }
+  sel.innerHTML=html;
+}
+
+function updateLinkedInfo(){
+  var el=document.getElementById("lb-linked-info");
+  if(!el)return;
+  if(lbLinkedSlot&&lbLinkedName){
+    el.textContent="📌 Linked: "+lbLinkedName+" — auto-updates every 60s";
+    el.style.color="#44ff88";
+  } else {
+    el.textContent="No slot linked — select one and click Link Slot";
+    el.style.color="#555";
+  }
+}
+
+async function loadLeaderboard(){
+  var container=document.getElementById("lb-entries");
+  if(!container)return;
+  container.innerHTML='<div style="color:#555;font-size:12px;padding:16px 0;text-align:center;">Loading...</div>';
+  try{
+    var resp=await fetch(LB_URL);
+    if(!resp.ok)throw new Error("HTTP "+resp.status);
+    var data=await resp.json();
+    var scores=data.scores||[];
+    scores.sort(function(a,b){return b.score-a.score;});
+    lbData=scores;
+    renderLeaderboard(scores);
+  }catch(e){
+    container.innerHTML='<div style="color:#ff5555;font-size:12px;padding:16px 0;text-align:center;">Could not reach leaderboard — the proxy may be temporarily down. Try again in a moment.</div>';
+  }
+}
+
+function renderLeaderboard(entries){
+  var container=document.getElementById("lb-entries");
+  if(!container)return;
+  if(!entries||entries.length===0){
+    container.innerHTML='<div style="color:#555;font-size:12px;padding:16px 0;text-align:center;">No scores yet — link a slot to be first!</div>';
+    return;
+  }
+  var html="";
+  for(var i=0;i<Math.min(entries.length,20);i++){
+    var e=entries[i];
+    var isUs=lbLinkedName&&e.name===lbLinkedName;
+    var rankClass=i===0?"gold":i===1?"silver":i===2?"bronze":"";
+    var medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1);
+    var age=e.ts?Math.floor((Date.now()-e.ts)/60000)+"m ago":"";
+    html+='<div class="lb-row'+(isUs?" lb-you":"")+'">';
+    html+='<span class="lb-rank '+rankClass+'">'+medal+'</span>';
+    html+='<span class="lb-name">'+escHtml(e.name)+(isUs?' <span style="color:#44ff88;font-size:9px">▶ YOU</span>':'')+'</span>';
+    html+='<span style="color:#444;font-size:10px;margin-right:6px;">'+age+'</span>';
+    html+='<span class="lb-score">'+fmtSave(e.score)+'</span>';
+    html+='</div>';
+  }
+  container.innerHTML=html;
+}
+
+function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+async function linkSlot(){
+  var sel=document.getElementById("lb-slot-select");
+  var val=sel?sel.value:"";
+  if(!val){lbStatus("Select a slot first!","#ff4444");return;}
+
+  var name,score;
+  if(val==="current"){
+    var n=window.prompt("Enter your display name (max 24 chars):","");
+    if(!n||!n.trim()){lbStatus("Cancelled.","#555");return;}
+    name=n.trim().slice(0,24);
+    score=totalEarned;
+  } else {
+    var slot=parseInt(val);
+    var info=slotSummary(slot);
+    if(!info){lbStatus("Slot is empty!","#ff4444");return;}
+    name=getSlotNick(slot)||"Slot "+slot;
+    score=info.totalEarned;
+  }
+  if(score<=0){lbStatus("No earnings yet!","#ff4444");return;}
+
+  lbStatus("Linking...","#555");
+  var ok=await pushScore(name,score);
+  if(ok){
+    lbLinkedSlot=(val==="current")?"current":parseInt(val);
+    lbLinkedName=name;
+    localStorage.setItem(LB_LINK_STORE,JSON.stringify({slot:lbLinkedSlot,name:lbLinkedName}));
+    lbStatus("✓ Linked as '"+name+"'! Score updates every 60s.","#44ff88");
+    updateLinkedInfo();
+    loadLeaderboard();
+  } else {
+    lbStatus("Failed to reach leaderboard. Try again.","#ff4444");
+  }
+}
+
+async function pushScore(name,score){
+  try{
+    // Read current scores, upsert this player's entry, write back
+    var resp=await fetch(LB_URL);
+    if(!resp.ok)throw new Error();
+    var data=await resp.json();
+    var scores=data.scores||[];
+    // Find existing entry for this name and update, or add new
+    var idx=scores.findIndex(function(e){return e.name===name;});
+    var entry={name:name,score:score,ts:Date.now()};
+    if(idx>=0)scores[idx]=entry;
+    else scores.push(entry);
+    // Write back
+    var put=await fetch(LB_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({scores:scores})
+    });
+    return put.ok;
+  }catch(e){return false;}
+}
+
+// Auto-update: called every 60s from autosave interval
+async function lbAutoUpdate(){
+  if(!lbLinkedSlot||!lbLinkedName)return;
+  var score=0;
+  if(lbLinkedSlot==="current"){
+    score=totalEarned;
+  } else {
+    var info=slotSummary(parseInt(lbLinkedSlot));
+    score=info?info.totalEarned:0;
+  }
+  if(score<=0)return;
+  var ok=await pushScore(lbLinkedName,score);
+  if(ok&&document.getElementById("lb-modal").className==="open")loadLeaderboard();
+}
+
+function showLocalScores(){
+  var entries=[];
+  for(var i=1;i<=NUM_SLOTS;i++){
+    var info=slotSummary(i);var nick=getSlotNick(i);
+    if(info&&info.totalEarned>0)entries.push({name:nick||"Slot "+i,score:info.totalEarned,ts:Date.now()});
+  }
+  if(totalEarned>0)entries.push({name:"Current Run",score:totalEarned,ts:Date.now()});
+  entries.sort(function(a,b){return b.score-a.score;});
+  renderLeaderboard(entries);
+}
+
+
+// Autosave every 60 seconds to slot 1 silently
+var autosaveInterval=setInterval(function(){
+  try{
+    var data=JSON.stringify(saveState());
+    localStorage.setItem(SAVE_KEY_PREFIX+"autosave",data);
+  }catch(e){}
+  lbAutoUpdate(); // also push linked slot score to leaderboard
+},60000);
+
+// Load autosave on startup if no manual saves exist
+(function(){
+  var anyManual=false;
+  for(var i=1;i<=NUM_SLOTS;i++) if(localStorage.getItem(slotKey(i))) anyManual=true;
+  // Silently restore autosave if present and no manual save loaded
+  var auto=localStorage.getItem(SAVE_KEY_PREFIX+"autosave");
+  if(auto&&!anyManual){
+    try{
+      var d=JSON.parse(auto);
+      if(loadState(d)===true) toast("Autosave restored!","#44ff88");
+    }catch(e){}
+  }
+})();
+
+renderAll();updateUI();loop();
+</script>
+</body>
+</html>
