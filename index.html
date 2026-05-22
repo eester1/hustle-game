@@ -282,7 +282,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v79</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v80</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -2540,15 +2540,11 @@ async function linkSlot(){
     var slot=parseInt(val);
     var info=slotSummary(slot);
     if(!info){lbStatus("Slot is empty!","#ff4444");return;}
-    // Use slot nick but strip anything inappropriate
-    var nick=getSlotNick(slot)||"Slot "+slot;
-    // If slot nickname is blocked, ask for a different name
-    if(!_isNameAllowed(nick)){
-      var n2=window.prompt("Your save slot name isn't allowed on the leaderboard. Enter a display name instead (max 24 chars):","");
-      if(!n2||!n2.trim()){lbStatus("Cancelled.","#555");return;}
-      nick=n2.trim().slice(0,24);
-    }
-    name=nick;
+    // Always ask for a display name — pre-fill with slot nickname if they have one
+    var existing=getSlotNick(slot)||"";
+    var n2=window.prompt("Enter your display name for the leaderboard (max 24 chars):",existing);
+    if(!n2||!n2.trim()){lbStatus("Cancelled.","#555");return;}
+    name=n2.trim().slice(0,24);
     score=info.totalEarned;
   }
 
