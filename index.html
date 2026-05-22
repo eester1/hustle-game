@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v116</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v117</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1238,7 +1238,7 @@ function applyTreeNode(node){
   if(node.type==="autoclickIV"){autoClickRate=Math.max(autoClickRate,7);}
   if(node.type==="autoclickV"){autoClickRate=Math.max(autoClickRate,12);}
   if(node.type==="autoclickVI"){autoClickRate=Math.max(autoClickRate,20);}
-  if(node.type==="autoclickMAX"){autoClickRate=Math.max(autoClickRate,40);}
+  if(node.type==="autoclickMAX"){autoClickRate=Math.max(autoClickRate,50);}
   if(node.type==="autobuy"){autoBuyActive=true;}
   if(node.type==="autoupgrade"){autoUpgradeActive=true;}
   if(node.type==="frenzycooldown"){frenzyCdMax*=node.val;}
@@ -1860,7 +1860,7 @@ function loop(){
   tickChainSpawn(dt);
   if(autoMegaFrenzy&&megaFrenzyUnlocked&&megaFrenzyCd<=0&&!megaFrenzyActive)activateMegaFrenzy();
   if(autoClickRate>0){
-    autoClickTimer+=dt;var ai=1/autoClickRate;
+    autoClickTimer+=dt;var ai=1/Math.min(50,autoClickRate);
     while(autoClickTimer>=ai){autoClickTimer-=ai;var base=clickValue*clickMult*(frenzyActive?5:1)*(megaFrenzyActive?15:1)*globalMult*prestigeMult;var earned=addMoney(base*combo);if(Math.random()<0.12)floaties.push({x:W*0.45+Math.random()*W*0.08,y:H/2,vy:-1.6,life:0.7,text:"+"+fmt(earned),color:"#44aaff",sz:8});}
   }
   if(autoBuyActive){autoBuyTimer+=dt;if(autoBuyTimer>=30){autoBuyTimer=0;
@@ -2004,7 +2004,7 @@ function loadState(s){
   incomeBoost=s.incomeBoost||1; globalMult=s.globalMult||1;
   cashBonusMult=s.cashBonusMult||0; cdReduceMult=s.cdReduceMult||1;
   globalIncomeBonus=s.globalIncomeBonus||0;
-  bulkBuyCount=s.bulkBuyCount||1; autoClickRate=s.autoClickRate||0;
+  bulkBuyCount=s.bulkBuyCount||1; autoClickRate=Math.min(50,s.autoClickRate||0);
   autoBuyActive=!!s.autoBuyActive; autoUpgradeActive=!!s.autoUpgradeActive;
   autoFrenzy=!!s.autoFrenzy; autoMegaFrenzy=!!s.autoMegaFrenzy;
   comboLocked=!!s.comboLocked; comboMaxActive=false;
