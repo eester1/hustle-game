@@ -282,7 +282,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v84</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v86</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -833,7 +833,7 @@ var treeNodes=[
   {id:51,x:540,y:1020,name:"Infinite Wealth",  icon:"∞",   desc:"+$500K/sec passive income permanently.",                                   cost:1500,bought:false,req:[46,47],      type:"baseincome",val:500000,color:"#ffcc44"},
   {id:52,x:710,y:1020,name:"Click Universe",   icon:"🌌",  desc:"Clicks earn 50x. A massive but fair endgame click boost.",               cost:1800,bought:false,req:[39,48],      type:"clickuniverse",    color:"#44ff88"},
   {id:53,x:1070,y:1020,name:"Max Speed",        icon:"⏩",  desc:"All businesses run 200x faster.",                        cost:1200, bought:false,req:[49],         type:"bizspeednode",val:200,color:"#44ffcc"},
-  {id:54,x:640,y:1140,name:"GODMODE",           icon:"👑",  desc:"Unlock auto frenzy, +50% cash, +100% business income, 1.5x clicks, -30% cooldowns.",     cost:2500,bought:false,req:[50,51,52,53],type:"godmode",    color:"#ffd700"},
+  {id:54,x:640,y:1140,name:"GODMODE",           icon:"👑",  desc:"Unlock all systems, +50% cash, +100% business income, 1.5x clicks, -30% cooldowns, +25% prestige tokens.",     cost:2500,bought:false,req:[50,51,52,53],type:"godmode",    color:"#ffd700"},
   {id:55,x:1260,y:300, name:"Time Bank",       icon:"🏦",  desc:"Unlock instant income payouts — spend tokens for cash equal to your $/sec × time. Payouts can be bought repeatedly.",cost:8,bought:false,req:[0],type:"timebank_unlock",color:"#ffcc44"},
   {id:56,x:1260,y:420, name:"1 Min Payout",    icon:"⏱️",  desc:"Instantly earn 1 minute of your current $/sec. Repeatable — buy as many times as you like.",cost:3,  bought:false,req:[55],type:"timebank_pay",val:60,   color:"#ffcc44"},
   {id:57,x:1260,y:540, name:"10 Min Payout",   icon:"🕐",  desc:"Instantly earn 10 minutes of your current $/sec. Repeatable.",cost:15, bought:false,req:[55],type:"timebank_pay",val:600,  color:"#ffcc44"},
@@ -1261,9 +1261,10 @@ function applyTreeNode(node){
   if(node.type==="cdreduce"){cdReduceMult*=node.val;toast("Consumable cooldowns reduced!","#44ffcc");}
   if(node.type==="godmode"){
     frenzyUnlocked=true;megaFrenzyUnlocked=true;prestigeUnlocked=true;buyAllUnlocked=true;
-    cashBonusMult+=0.5;autoFrenzy=true;autoMegaFrenzy=true;
+    cashBonusMult+=0.5;
     clickValue*=1.5;globalIncomeBonus+=1.0;cdReduceMult*=0.7;
-    startRainbow(20);calcPerSec();toast("👑 GODMODE ACTIVATED!","#ffd700");
+    prestigeTokenMult*=1.25;
+    startRainbow(20);calcPerSec();toast("👑 GODMODE ACTIVATED! +25% prestige tokens.","#ffd700");
     spawnShockwave(W/2,H/2);spawnShockwave(W/3,H/3);spawnShockwave(2*W/3,2*H/3);
   }
   calcPerSec();
