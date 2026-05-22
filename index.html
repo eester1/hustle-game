@@ -249,7 +249,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v68</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v69</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -700,7 +700,7 @@ var treeNodes=[
   {id:19,x:1070,y:420, name:"Biz Speed II",      icon:"⏩",  desc:"All businesses run 2x faster total.",                                    cost:50,  bought:false,req:[12],         type:"bizspeednode",val:2,color:"#44ffcc"},
   {id:20,x:140, y:540, name:"Auto Clicker IV",  icon:"🖱️",  desc:"Auto-clicks 25 times per second.",                                        cost:80,  bought:false,req:[13],         type:"autoclickIV",      color:"#44aaff"},
   {id:21,x:270,y:540, name:"Token Miner II",   icon:"⬡",   desc:"Earn 1.2x tokens per prestige (1.32x total with Miner I).",                                      cost:150,  bought:false,req:[14],         type:"tokenmult",val:1.2,   color:"#cc44ff"},
-  {id:22,x:370,y:540, name:"Bulk Consumer I",  icon:"🛍️",  desc:"Buy 3 of the same consumable per click.",                                cost:60,  bought:false,req:[15],         type:"stackup",val:3,     color:"#ff88cc"},
+  {id:22,x:370,y:540, name:"Bulk Consumer I",  icon:"🛍️",  desc:"All consumable cooldowns 20% shorter.",                                cost:60,  bought:false,req:[15],         type:"cdreduce",val:0.8,     color:"#ff88cc"},
   {id:23,x:540,y:540, name:"Click Chain I",    icon:"🔗",  desc:"Each click has a 20% chance to fire 2 bonus auto-clicks.",               cost:80,  bought:false,req:[16],         type:"clickchain",val:0.2,color:"#44ff88"},
   {id:24,x:710,y:540, name:"Cash Bonus IV",    icon:"💵",  desc:"+40% to all cash earned.",                                       cost:80,  bought:false,req:[17],         type:"cashbonus",val:0.40, color:"#ffcc44"},
   {id:25,x:840,y:540, name:"Income Boost I",   icon:"📊",  desc:"All business income +50% forever.",                                        cost:100,  bought:false,req:[17],         type:"incomemult",val:1.5,  color:"#44ff88"},
@@ -708,7 +708,7 @@ var treeNodes=[
   {id:27,x:1070,y:540, name:"Mega Auto",        icon:"🔥",  desc:"Mega Frenzy activates automatically.",                                   cost:80,  bought:false,req:[26],         type:"automegafrenzy",   color:"#ff8800"},
   {id:28,x:140, y:660, name:"Auto Clicker V",   icon:"🖱️",  desc:"Auto-clicks 100 times per second.",                                      cost:180,  bought:false,req:[20],         type:"autoclickV",       color:"#44aaff"},
   {id:29,x:270,y:660, name:"Token Miner III",  icon:"⬡",   desc:"Earn 1.3x tokens per prestige (1.72x total).",                                     cost:500,  bought:false,req:[21],         type:"tokenmult",val:1.3,  color:"#cc44ff"},
-  {id:30,x:370,y:660, name:"Bulk Consumer II", icon:"🛍️",  desc:"Buy 5 of the same consumable per click.",                                cost:150,  bought:false,req:[22],         type:"stackup",val:5,     color:"#ff88cc"},
+  {id:30,x:370,y:660, name:"Bulk Consumer II", icon:"🛍️",  desc:"All consumable cooldowns 35% shorter (stacks with Bulk I).",                                cost:150,  bought:false,req:[22],         type:"cdreduce",val:0.65,     color:"#ff88cc"},
   {id:31,x:540,y:660, name:"Click Chain II",   icon:"🔗",  desc:"Click chain chance 50%, fires 4 bonus clicks.",                         cost:220,  bought:false,req:[23],         type:"clickchain2",      color:"#44ff88"},
   {id:32,x:710,y:660, name:"Cash Bonus V",     icon:"💵",  desc:"+75% to all cash earned.",                                               cost:200,  bought:false,req:[24],         type:"cashbonus",val:0.75, color:"#ffcc44"},
   {id:33,x:840,y:660, name:"Income Boost II",  icon:"📊",  desc:"All business income +150% total.",                                         cost:250,  bought:false,req:[25],         type:"incomemult",val:2.5,  color:"#44ff88"},
@@ -716,7 +716,7 @@ var treeNodes=[
   {id:35,x:1070,y:660, name:"Biz Speed III",    icon:"⏩",  desc:"All businesses run 4x faster total.",                                   cost:220,  bought:false,req:[19],         type:"bizspeednode",val:4,color:"#44ffcc"},
   {id:36,x:140, y:780, name:"Auto Clicker VI",  icon:"🖱️",  desc:"Auto-clicks 500 times per second.",                                      cost:400, bought:false,req:[28],         type:"autoclickVI",      color:"#44aaff"},
   {id:37,x:270,y:780, name:"Token Surge I",    icon:"⬡",   desc:"Earn 1.5x tokens per prestige (2.57x total).",                                     cost:1200, bought:false,req:[29],         type:"tokenmult",val:1.5,  color:"#cc44ff"},
-  {id:38,x:370,y:780, name:"Bulk Consumer III",icon:"🛍️",  desc:"Buy 10 of the same consumable per click.",                               cost:250,  bought:false,req:[30],         type:"stackup",val:10,    color:"#ff88cc"},
+  {id:38,x:370,y:780, name:"Bulk Consumer III",icon:"🛍️",  desc:"All consumable cooldowns 50% shorter (stacks with Bulk I & II).",                               cost:250,  bought:false,req:[30],         type:"cdreduce",val:0.5,    color:"#ff88cc"},
   {id:39,x:540,y:780, name:"Click God",        icon:"👊",  desc:"Clicks earn 50x. Combo locks at max.",                                  cost:550, bought:false,req:[31],         type:"clickgod",         color:"#44ff88"},
   {id:40,x:710,y:780, name:"Cash Bonus VI",    icon:"💵",  desc:"+150% to all cash earned.",                                               cost:400, bought:false,req:[32],         type:"cashbonus",val:1.5, color:"#ffcc44"},
   {id:41,x:840,y:780, name:"Prestige Booster", icon:"✨",  desc:"Prestige income multiplier raised from 1.2x to 1.4x per prestige.",             cost:400, bought:false,req:[33],         type:"prestigeboostnode",color:"#cc44ff"},
@@ -732,7 +732,7 @@ var treeNodes=[
   {id:51,x:540,y:1020,name:"Infinite Wealth",  icon:"∞",   desc:"+$500K/sec passive income permanently.",                                   cost:1500,bought:false,req:[46,47],      type:"baseincome",val:500000,color:"#ffcc44"},
   {id:52,x:710,y:1020,name:"Click Universe",   icon:"🌌",  desc:"Clicks earn 50x. A massive but fair endgame click boost.",               cost:1800,bought:false,req:[39,48],      type:"clickuniverse",    color:"#44ff88"},
   {id:53,x:1070,y:1020,name:"Max Speed",        icon:"⏩",  desc:"All businesses run 200x faster.",                        cost:1200, bought:false,req:[49],         type:"bizspeednode",val:200,color:"#44ffcc"},
-  {id:54,x:640,y:1140,name:"GODMODE",           icon:"👑",  desc:"Unlock everything. ALL bonuses x2. Auto everything. Max bulk buy.",     cost:2500,bought:false,req:[50,51,52,53],type:"godmode",    color:"#ffd700"},
+  {id:54,x:640,y:1140,name:"GODMODE",           icon:"👑",  desc:"Unlock auto frenzy, +50% cash, +100% business income, 1.5x clicks, -30% cooldowns.",     cost:2500,bought:false,req:[50,51,52,53],type:"godmode",    color:"#ffd700"},
   {id:55,x:1260,y:300, name:"Time Bank",       icon:"🏦",  desc:"Unlock instant income payouts — spend tokens for cash equal to your $/sec × time. Payouts can be bought repeatedly.",cost:8,bought:false,req:[0],type:"timebank_unlock",color:"#ffcc44"},
   {id:56,x:1260,y:420, name:"1 Min Payout",    icon:"⏱️",  desc:"Instantly earn 1 minute of your current $/sec. Repeatable — buy as many times as you like.",cost:3,  bought:false,req:[55],type:"timebank_pay",val:60,   color:"#ffcc44"},
   {id:57,x:1260,y:540, name:"10 Min Payout",   icon:"🕐",  desc:"Instantly earn 10 minutes of your current $/sec. Repeatable.",cost:15, bought:false,req:[55],type:"timebank_pay",val:600,  color:"#ffcc44"},
@@ -1098,12 +1098,12 @@ function applyTreeNode(node){
   if(node.type==="combospeedI"){}   // handled dynamically in handleClick
   if(node.type==="combospeedII"){}  // handled dynamically in handleClick
   if(node.type==="autoclickI"){autoClickRate=Math.max(autoClickRate,1/3);}
-  if(node.type==="autoclickII"){autoClickRate=Math.max(autoClickRate,3);}
-  if(node.type==="autoclickIII"){autoClickRate=Math.max(autoClickRate,10);}
-  if(node.type==="autoclickIV"){autoClickRate=Math.max(autoClickRate,25);}
-  if(node.type==="autoclickV"){autoClickRate=Math.max(autoClickRate,100);}
-  if(node.type==="autoclickVI"){autoClickRate=Math.max(autoClickRate,500);}
-  if(node.type==="autoclickMAX"){autoClickRate=Math.max(autoClickRate,2000);}
+  if(node.type==="autoclickII"){autoClickRate=Math.max(autoClickRate,1);}
+  if(node.type==="autoclickIII"){autoClickRate=Math.max(autoClickRate,3);}
+  if(node.type==="autoclickIV"){autoClickRate=Math.max(autoClickRate,7);}
+  if(node.type==="autoclickV"){autoClickRate=Math.max(autoClickRate,12);}
+  if(node.type==="autoclickVI"){autoClickRate=Math.max(autoClickRate,20);}
+  if(node.type==="autoclickMAX"){autoClickRate=Math.max(autoClickRate,40);}
   if(node.type==="autobuy"){autoBuyActive=true;}
   if(node.type==="autoupgrade"){autoUpgradeActive=true;}
   if(node.type==="frenzycooldown"){frenzyCdMax*=node.val;}
@@ -1112,7 +1112,7 @@ function applyTreeNode(node){
   if(node.type==="bizspeednode"){perkEffects.bizSpeedMult*=node.val;toast("Business speed x"+node.val+"!","#44ffcc");}
   if(node.type==="clickchain"){clickChainChance=node.val;toast("Click chain unlocked! 20% double-click!","#44ff88");}
   if(node.type==="clickchain2"){clickChainChance=0.5;clickChainCount=4;toast("Click chain 50%! Fires 4 bonus clicks!","#44ff88");}
-  if(node.type==="clickgod"){clickValue*=50;comboLocked=true;toast("CLICK GOD! 50x clicks + combo locked at max!","#44ff88");combo=perkEffects.comboCap;}
+  if(node.type==="clickgod"){clickValue*=10;toast("CLICK GOD! 10x clicks!","#44ff88");}
   if(node.type==="clickuniverse"){clickValue*=50;toast("CLICK UNIVERSE! 50x clicks!","#44ff88");}
   if(node.type==="prestigeboostnode"){prestigeBaseMult=1.4;toast("Prestige multiplier improved to 1.4x per prestige!","#cc44ff");}
   if(node.type==="prestigeboostnode2"){prestigeBaseMult*=1.5;toast("Prestige multiplier improved to "+prestigeBaseMult.toFixed(2)+"x per prestige!","#cc44ff");}
@@ -1159,10 +1159,9 @@ function applyTreeNode(node){
   if(node.type==="cdreduce"){cdReduceMult*=node.val;toast("Consumable cooldowns reduced!","#44ffcc");}
   if(node.type==="godmode"){
     frenzyUnlocked=true;megaFrenzyUnlocked=true;prestigeUnlocked=true;buyAllUnlocked=true;
-    cashBonusMult*=2;prestigeTokenMult*=2;autoFrenzy=true;autoMegaFrenzy=true;bulkBuyCount=Math.max(bulkBuyCount,10);
-    clickValue*=2;for(var i=0;i<businesses.length;i++)businesses[i].mult*=2;
-    perkEffects.bizSpeedMult*=2;cdReduceMult*=0.5;comboLocked=true;combo=perkEffects.comboCap;
-    startRainbow(20);calcPerSec();toast("👑 GODMODE ACTIVATED! ALL SYSTEMS MAXED!","#ffd700");
+    cashBonusMult+=0.5;autoFrenzy=true;autoMegaFrenzy=true;
+    clickValue*=1.5;globalIncomeBonus+=1.0;cdReduceMult*=0.7;
+    startRainbow(20);calcPerSec();toast("👑 GODMODE ACTIVATED!","#ffd700");
     spawnShockwave(W/2,H/2);spawnShockwave(W/3,H/3);spawnShockwave(2*W/3,2*H/3);
   }
   calcPerSec();
