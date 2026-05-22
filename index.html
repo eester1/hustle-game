@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v104</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v107</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -477,9 +477,9 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     <div class="help-section">
       <h3 style="color:#44ff88">💵 Money Chains</h3>
       <p><b class="hl-green">Money Chains</b> are a special bonus event that spawns on a rolling timer. Watch the <b>💵 Chain bar</b> in the top-left — it shows the current spawn chance. Every second, the game rolls that percentage chance to spawn a chain. So at 70%, there's a 70% chance it spawns that second. The longer you wait, the higher the chance gets until it eventually spawns.</p>
-      <p>Click it and the next button appears at a random spot <b>on the same side</b>. All 5 buttons stay on the same side (left or right, chosen randomly each chain). Previously clicked buttons stay visible but faded out, and a dashed line connects them so you can see the path you have traveled. Click all <b>5 buttons</b> in time and the final <b>💰</b> gives a <b class="hl-yellow">big money payout</b> — 100x your current click value, scaled by your combo and prestige multiplier.</p>
+      <p>Click it and the next button appears at a random spot <b>on the same side</b>. All 5 buttons stay on the same side (left or right, chosen randomly each chain). Previously clicked buttons stay visible but faded out, and a dashed line connects them so you can see the path you have traveled. Click all <b>5 buttons</b> in time and the final <b>💰</b> gives a <b class="hl-yellow">big money payout</b> that always scales with your progress — it pays out roughly <b>2.5 minutes of your passive income</b>, or <b>60 clicks worth</b> of earnings if that's higher, multiplied by your prestige bonus. This means the reward is always meaningful whether you are early game or deep into prestiges.</p>
       <p>You have <b>4 seconds</b> to click each button before the chain breaks and resets. Don't panic — just look around the screen quickly.</p>
-      <p>Money Chains are <b>always active</b> — no unlock needed. A hidden timer runs in the background. The bar fills at a constant speed from the moment the timer starts. By 3 minutes it reaches 100% and a chain is near-guaranteed to have spawned. Once one appears (complete or fail), the timer resets and the cycle starts over.</p>
+      <p>Money Chains are <b>always active</b> — no unlock needed. A hidden timer runs in the background. The bar fills at 0.5% per second — it reaches 100% in about 3 minutes and 20 seconds. Once one appears (complete or fail), the timer resets and the cycle starts over.</p>
       <div class="help-tip">💡 The chain only spawns when the game is open and running. Leaving it idle still builds up the timer.</div>
     </div>
 
@@ -1298,7 +1298,7 @@ var CHAIN_TIMEOUT=4000;
 var chainInProgress=false;
 var chainTimerSecs=0;
 var chainMinSecs=0;           // bar starts filling immediately
-var chainMaxSecs=180;         // near-guaranteed by 3 minutes
+var chainMaxSecs=200;         // 0.5% per second — reaches 100% in ~3.3 minutes
 var chainFloatBtn=null;
 var chainDoneBtns=[];
 var chainSide=null;
