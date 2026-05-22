@@ -249,7 +249,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v70</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v72</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -502,6 +502,9 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
         <button class="save-action-btn green" style="padding:6px 14px;" onclick="linkSlot()">📌 Link Slot</button>
       </div>
       <div id="lb-linked-info" style="font-size:11px;color:#555;margin-top:6px;"></div>
+      <div id="lb-remove-row" style="display:none;margin-top:6px;">
+        <button class="save-action-btn red" style="width:100%;padding:6px;font-size:11px;" onclick="removeMyEntry()">🗑️ Remove My Entry from Leaderboard</button>
+      </div>
     </div>
     <div id="lb-status"></div>
     <button id="lb-close-btn" onclick="closeLeaderboard()">✕ Close</button>
@@ -2166,13 +2169,39 @@ function populateSlotSelect(){
 
 function updateLinkedInfo(){
   var el=document.getElementById("lb-linked-info");
+  var removeRow=document.getElementById("lb-remove-row");
   if(!el)return;
   if(lbLinkedSlot&&lbLinkedName){
     el.textContent="📌 Linked: "+lbLinkedName+" — auto-updates every 60s";
     el.style.color="#44ff88";
+    if(removeRow)removeRow.style.display="block";
   } else {
     el.textContent="No slot linked — select one and click Link Slot";
     el.style.color="#555";
+    if(removeRow)removeRow.style.display="none";
+  }
+}
+
+async function removeMyEntry(){
+  if(!lbLinkedName){lbStatus("No linked entry to remove.","#ff4444");return;}
+  lbStatus("Removing...","#555");
+  var nameToRemove=lbLinkedName;
+  // Also read stored name in case they differ
+  try{
+    var stored=JSON.parse(localStorage.getItem(LB_LINK_STORE)||"{}");
+    if(stored.name&&stored.name!==nameToRemove){
+      await removeScore(stored.name);
+    }
+  }catch(e){}
+  var ok=await removeScore(nameToRemove);
+  if(ok){
+    lbLinkedSlot=null;lbLinkedName=null;
+    localStorage.removeItem(LB_LINK_STORE);
+    lbStatus("✓ Entry removed from leaderboard.","#44ff88");
+    updateLinkedInfo();
+    loadLeaderboard();
+  } else {
+    lbStatus("Could not reach leaderboard. Try again.","#ff4444");
   }
 }
 
@@ -2414,6 +2443,41 @@ var autosaveInterval=setInterval(function(){
 })();
 
 renderAll();updateUI();loop();
+
+// On startup, silently remove any entry whose name matches our stored link name
+// but ONLY if we no longer have a valid linked slot (i.e. after a wipe)
+(function(){
+  setTimeout(async function(){
+    try{
+      var stored=localStorage.getItem(LB_LINK_STORE);
+      // If no link stored but there was one before the wipe, nothing to clean
+      // Only clean if we detect an orphan: stored link exists but progress was wiped
+      if(!stored&&lbLinkedName){
+        // lbLinkedName set from old localStorage before wipe cleared it
+        await removeScore(lbLinkedName);
+      }
+    }catch(e){}
+  },2000);
+})();
+// This runs silently on startup and cleans up entries that couldn't be removed normally
+(function(){
+  var staleNames=["eester1 (indev)","eester1 (Indev)"];
+  setTimeout(async function(){
+    try{
+      var resp=await fetch(LB_URL);
+      if(!resp.ok)return;
+      var data=await resp.json();
+      var scores=data.scores||[];
+      var cleaned=scores.filter(function(e){
+        return staleNames.indexOf(e.name)<0;
+      });
+      if(cleaned.length<scores.length){
+        fetch(LB_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scores:cleaned})});
+        console.log("Cleaned "+( scores.length-cleaned.length)+" stale leaderboard entries");
+      }
+    }catch(e){}
+  },3000); // wait 3s after load so it doesn't slow down startup
+})();
 </script>
 </body>
 </html>
