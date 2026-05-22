@@ -282,7 +282,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v80</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v81</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1685,12 +1685,37 @@ function loop(){
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i];if(b.owned<=0)continue;
     b.timer+=dt*perkEffects.bizSpeedMult;
-    while(b.timer>=b.interval){b.timer-=b.interval;var earned=bizIncome(b);addMoney(earned);if(Math.random()<0.18)floaties.push({x:25+Math.random()*(W*0.25),y:H-220,vy:-1.3,life:1,text:"+"+fmt(earned)+" "+b.icon,color:rainbowActive?rainbowColor(t):b.color,sz:9});}
+    // Cap cycles per frame to 10 to prevent spiral lag at very high speeds
+    // Extra cycles still earn money (lumped into one payment) but don't each spawn floaties
+    var maxCycles=10;
+    var cycles=0;
+    var lumpedEarned=0;
+    while(b.timer>=b.interval&&cycles<maxCycles){
+      b.timer-=b.interval;
+      lumpedEarned+=bizIncome(b);
+      cycles++;
+    }
+    // If we hit the cap, drain the remaining timer in one go (no more floaties)
+    if(b.timer>=b.interval){
+      var extra=Math.floor(b.timer/b.interval);
+      lumpedEarned+=bizIncome(b)*extra;
+      b.timer=b.timer%b.interval;
+    }
+    if(lumpedEarned>0){
+      addMoney(lumpedEarned);
+      // Only spawn ONE floatie per business per frame, and only if under the cap
+      if(floaties.length<40&&Math.random()<0.12){
+        floaties.push({x:25+Math.random()*(W*0.25),y:H-220,vy:-1.3,life:1,text:"+"+fmt(lumpedEarned)+" "+b.icon,color:rainbowActive?rainbowColor(t):b.color,sz:9});
+      }
+    }
   }
   if(perkEffects.basePassive>0)addMoney(perkEffects.basePassive*dt);
   for(var i=floaties.length-1;i>=0;i--){var f=floaties[i];f.y+=f.vy;f.vy*=0.97;f.life-=0.02;if(f.life<=0)floaties.splice(i,1);}
+  if(floaties.length>50)floaties.splice(0,floaties.length-50); // hard cap
   for(var i=sparks.length-1;i>=0;i--){var s=sparks[i];s.x+=s.vx;s.y+=s.vy;s.vy+=0.1;s.life-=0.035;if(s.life<=0)sparks.splice(i,1);}
+  if(sparks.length>120)sparks.splice(0,sparks.length-120);
   for(var i=rainbowP.length-1;i>=0;i--){var p=rainbowP[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.06;p.life-=0.025;if(p.life<=0)rainbowP.splice(i,1);}
+  if(rainbowP.length>150)rainbowP.splice(0,rainbowP.length-150);
   for(var i=shockwaves.length-1;i>=0;i--){var sw=shockwaves[i];sw.r+=7;sw.life-=0.03;if(sw.life<=0)shockwaves.splice(i,1);}
   ctx.clearRect(0,0,W,H);
   for(var i=0;i<shockwaves.length;i++){var sw=shockwaves[i];ctx.strokeStyle=rainbowActive?rainbowColor(t+i*0.3):"rgba(255,255,255,"+sw.life*0.35+")";ctx.lineWidth=2*sw.life;ctx.beginPath();ctx.arc(sw.x,sw.y,sw.r,0,6.28);ctx.stroke();}
