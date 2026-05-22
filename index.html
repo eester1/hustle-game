@@ -282,7 +282,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v82</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v83</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -968,6 +968,7 @@ function prestige(){
       if(treeNodes[i].type==="clickboost")clickValue*=treeNodes[i].val;
       if(treeNodes[i].type==="clickpct")clickMult*=(1+treeNodes[i].val);
       if(treeNodes[i].type==="incomemult")globalIncomeBonus+=(treeNodes[i].val-1);
+      if(treeNodes[i].type==="bizspeednode")perkEffects.bizSpeedBonus=(perkEffects.bizSpeedBonus||0)+treeNodes[i].val;
       if(treeNodes[i].type==="consumable_tier")consumableTierUnlocked=Math.max(consumableTierUnlocked,treeNodes[i].tierVal);
       if(treeNodes[i].type==="combo_unlock"){comboUnlocked=true;document.getElementById("combo-zone").style.display="flex";}
       if(treeNodes[i].type==="combocap"){perkEffects.comboCap=treeNodes[i].val;}
@@ -1210,7 +1211,7 @@ function applyTreeNode(node){
   if(node.type==="frenzycooldown"){frenzyCdMax*=node.val;}
   if(node.type==="frenzybuff"){frenzyCdMax*=0.7;frenzyDur+=2;toast("Frenzy CD -30%, duration +2s!","#ff4466");}
   if(node.type==="frenzybuff2"){frenzyCdMax*=0.5;frenzyDur+=2;toast("Frenzy CD halved, duration +4s total!","#ff4466");}
-  if(node.type==="bizspeednode"){perkEffects.bizSpeedMult*=node.val;toast("Business speed x"+node.val+"!","#44ffcc");}
+  if(node.type==="bizspeednode"){perkEffects.bizSpeedBonus=(perkEffects.bizSpeedBonus||0)+node.val;toast("Business speed bonus +"+node.val+"x added!","#44ffcc");calcPerSec();}
   if(node.type==="clickchain"){clickChainChance=node.val;toast("Click chain unlocked! 20% double-click!","#44ff88");}
   if(node.type==="clickchain2"){clickChainChance=0.5;clickChainCount=4;toast("Click chain 50%! Fires 4 bonus clicks!","#44ff88");}
   if(node.type==="clickgod"){clickValue*=10;toast("CLICK GOD! 10x clicks!","#44ff88");}
@@ -1495,7 +1496,7 @@ function renderBizList(){
   var html="";
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i],cost=bizCost(b),can=money>=cost;
-    var spd=perkEffects.bizSpeedMult,prog=b.owned>0?(b.timer/(b.interval/spd))*100:0;
+    var spd=Math.min(10,(perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)-1)),prog=b.owned>0?(b.timer/(b.interval/spd))*100:0;
     var maxN=can?Math.floor(money/cost):0;
     var ttBody="Earns "+fmt(b.baseIncome)+" per "+b.interval+"s per unit owned. Auto-pays on its own timer.";
     var ttHint=b.owned>0?"Currently earning "+fmt(bizIncome(b))+" per payout ("+b.owned+" owned).":"Buy one to start earning passive income.";
@@ -1684,7 +1685,10 @@ function loop(){
   if(autoUpgradeActive){autoUpgradeTimer+=dt;if(autoUpgradeTimer>=15){autoUpgradeTimer=0;for(var i=0;i<upgrades.length;i++){var u=upgrades[i];if(!u.bought&&money>=u.cost&&(u.reqIdx<0||businesses[u.reqIdx].owned>=u.req)){buyUpgrade(i);break;}}}}
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i];if(b.owned<=0)continue;
-    b.timer+=dt*perkEffects.bizSpeedMult;
+    // Compute effective speed — tree node bonuses are additive, then capped at 10x total
+    var treeSpeedBonus=perkEffects.bizSpeedBonus||0;
+    var effectiveSpeed=Math.min(10, perkEffects.bizSpeedMult + treeSpeedBonus - 1);
+    b.timer+=dt*effectiveSpeed;
     // Cap cycles per frame to 10 to prevent spiral lag at very high speeds
     // Extra cycles still earn money (lumped into one payment) but don't each spawn floaties
     var maxCycles=10;
@@ -1728,7 +1732,7 @@ function loop(){
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i];
     if(b.owned>0&&bizBars[i]){
-      var spd=perkEffects.bizSpeedMult;
+      var spd=Math.min(10,(perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)-1));
       bizBars[i].style.width=Math.min(100,(b.timer/(b.interval/spd))*100)+"%";
     }
   }
@@ -1988,7 +1992,7 @@ function confirmWipe(){
   bulkBuyCount=1;autoClickRate=0;autoBuyActive=false;autoUpgradeActive=false;
   autoFrenzy=false;autoMegaFrenzy=false;
   clickChainChance=0;clickChainCount=2;
-  perkEffects={comboCap:8,comboTimerMult:1,luckyBoost:1,rainbowMult:1,costReduce:1,basePassive:0,bizSpeedMult:1};
+  perkEffects={comboCap:8,comboTimerMult:1,luckyBoost:1,rainbowMult:1,costReduce:1,basePassive:0,bizSpeedMult:1,bizSpeedBonus:0};
   for(var i=0;i<businesses.length;i++){businesses[i].owned=0;businesses[i].timer=0;businesses[i].mult=1;}
   for(var i=0;i<upgrades.length;i++)upgrades[i].bought=false;
   for(var i=0;i<perks.length;i++)perks[i].owned=false;
