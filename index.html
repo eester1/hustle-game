@@ -282,7 +282,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v87</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v88</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -2311,7 +2311,14 @@ async function submitFeedback(){
 var LB_URL="https://corsproxy.io/?https://api.npoint.io/38273609a166d56da096";
 
 // ── PLAYER PRESENCE (concurrent count) ──
-var PRESENCE_SESSION=Math.random().toString(36).slice(2,10); // unique per tab
+// Use sessionStorage so refreshing the same tab reuses the same session ID
+// This prevents each refresh counting as a new player
+var PRESENCE_SESSION=(function(){
+  var key="hustle_session_id";
+  var id=sessionStorage.getItem(key);
+  if(!id){id=Math.random().toString(36).slice(2,10);sessionStorage.setItem(key,id);}
+  return id;
+})();
 var PRESENCE_INTERVAL=null;
 
 async function presencePing(){
