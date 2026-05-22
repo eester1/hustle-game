@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v103</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v104</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1374,7 +1374,19 @@ function handleChainClick(btn,cx,cy){
   chainFloatBtn=null;
   chainStep++;
   if(chainStep>=5){
-    var payout=clickValue*clickMult*combo*(1+globalIncomeBonus)*prestigeMult*100;
+    var payout;
+    if(perSec>0){
+      // Pay out 2-3 minutes of passive income — always meaningful no matter the stage
+      var incomeBase=perSec*150; // 2.5 minutes of passive income
+      // Also factor in click value so active clickers get a bonus
+      var clickBase=clickValue*clickMult*combo*60; // 60 clicks worth
+      // Take the higher of the two so both playstyles are rewarded
+      payout=Math.max(incomeBase, clickBase) * prestigeMult;
+    } else {
+      // No businesses yet — fall back to 500 clicks worth
+      payout=clickValue*clickMult*combo*prestigeMult*500;
+    }
+    payout=Math.max(payout,10); // always at least $10
     addMoney(payout);
     var cx2=window.innerWidth*(chainSide==="left"?0.25:0.75);
     var cy2=window.innerHeight*0.45;
