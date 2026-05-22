@@ -40,6 +40,13 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
 #click-label { font-size: 11px; color: #44ff88; letter-spacing: 1px; font-weight: 600; }
 #click-value { font-size: 11px; color: #555; }
 #combo-zone { display: none; flex-direction: column; align-items: center; gap: 3px; }
+#chain-overlay { position:fixed; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:50; }
+.chain-float-btn { position:absolute; width:46px; height:46px; border-radius:50%; border:2px solid #44ff88; background:#0a1a0a; cursor:pointer; font-size:20px; display:flex; align-items:center; justify-content:center; pointer-events:all; animation:chainPulse 0.8s ease-in-out infinite; box-shadow:0 0 12px #44ff8870; transition:transform 0.1s; user-select:none; }
+.chain-float-btn:hover { transform:scale(1.12); }
+.chain-float-btn:active { transform:scale(0.92); }
+.chain-float-btn.final { border-color:#ffcc44; box-shadow:0 0 16px #ffcc4470; animation:chainPulseFinal 0.8s ease-in-out infinite; }
+@keyframes chainPulse { 0%,100%{box-shadow:0 0 8px #44ff8860;} 50%{box-shadow:0 0 20px #44ff88cc;} }
+@keyframes chainPulseFinal { 0%,100%{box-shadow:0 0 10px #ffcc4470;} 50%{box-shadow:0 0 24px #ffcc44cc;} }
 #combo-display { font-size: 24px; font-weight: bold; color: #888; transition: all 0.1s; }
 #combo-label { font-size: 10px; color: #555; letter-spacing: 1px; }
 #combo-bar-wrap { width: 54px; height: 4px; background: #1a1a1a; border-radius: 2px; }
@@ -282,7 +289,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v88</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v93</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -323,6 +330,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
   </div>
   <div id="active-effects"></div>
+  <div id="chain-overlay"></div>
   <div id="toast-wrap"></div>
   <div id="bottom-panel">
     <div class="panel"><div class="panel-title"><span>Businesses</span></div><div id="biz-list"></div></div>
@@ -454,6 +462,15 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
       <p>The <b class="hl-yellow">milestone bar</b> tracks your progress toward total money earned targets. Hitting one spawns a shockwave.</p>
       <p><b class="hl-blue">XP</b> (top right bar) levels you up as you earn money. Your title changes with each level — purely cosmetic.</p>
       <div class="help-tip">💡 Milestones reset on prestige. XP and level also reset. Only Skill Tree and tokens persist.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#44ff88">💵 Money Chains</h3>
+      <p><b class="hl-green">Money Chains</b> are a rare bonus event that appears while you click. After enough clicks, a glowing <b>💵</b> button will randomly appear in the empty space on screen — this is the start of a chain.</p>
+      <p>Click it and a new button spawns at a different random spot. Click all <b>5 buttons</b> in time and the final <b>💰</b> gives a <b class="hl-yellow">big money payout</b> — 100x your current click value, scaled by your combo and prestige multiplier.</p>
+      <p>You have <b>4 seconds</b> to click each button before the chain breaks and resets. Don't panic — just look around the screen quickly.</p>
+      <p>Money Chains are <b>always active</b> — no unlock needed. A hidden timer runs in the background. For the first 3 minutes nothing happens, then the chance to spawn starts climbing. By 8 minutes a chain is near-guaranteed. Once one appears (complete or fail), the timer resets and the cycle starts over.</p>
+      <div class="help-tip">💡 The chain only spawns when the game is open and running. Leaving it idle still builds up the timer.</div>
     </div>
 
   </div>
@@ -780,76 +797,74 @@ var perks=[
 // Tokens now require 500x more money-earned to accumulate (handled in addMoney)
 var treeNodes=[
   {id:0, x:640,y:60,  name:"First Steps",      icon:"👣",  desc:"Unlock Frenzy button. +5% cash bonus.",                                    cost:3,    bought:false,req:[],          type:"unlock_frenzy",    color:"#ff4466"},
-  {id:1, x:190,y:180, name:"Auto Clicker I",   icon:"🖱️",  desc:"Auto-clicks once every 3 seconds.",                                        cost:12,   bought:false,req:[0],          type:"autoclickI",       color:"#44aaff"},
-  {id:2, x:370,y:180, name:"Combo Speed I",    icon:"🔥",  desc:"Combo builds 1.5x faster.",                                                cost:10,   bought:false,req:[0],          type:"combospeedI",      color:"#ff8844"},
-  {id:3, x:540,y:180, name:"Click Power I",    icon:"👊",  desc:"+50% to all click earnings.",                                                cost:10,   bought:false,req:[0],          type:"clickpct",  val:0.5,  color:"#44ff88"},
-  {id:4, x:710,y:180, name:"Cash Bonus I",     icon:"💵",  desc:"+5% to all cash earned.",                                                 cost:10,   bought:false,req:[0],          type:"cashbonus",val:0.05, color:"#ffcc44"},
-  {id:5, x:890,y:180, name:"Frenzy Boost I",   icon:"⚡",  desc:"Frenzy cooldown -30%. Frenzy lasts 2s longer.",                           cost:15,   bought:false,req:[0],          type:"frenzybuff",       color:"#ff4466"},
-  {id:6, x:140, y:300, name:"Auto Clicker II",  icon:"🖱️",  desc:"Auto-clicks 3 times per second.",                                         cost:25,   bought:false,req:[1],          type:"autoclickII",      color:"#44aaff"},
-  {id:7, x:270,y:300, name:"Auto Investor",    icon:"📊",  desc:"Every 30s, automatically buys whichever business gives the best income per dollar spent.",cost:20,   bought:false,req:[1],          type:"autobuy",          color:"#44ff88"},
-  {id:8, x:370,y:300, name:"Combo Speed II",   icon:"🔥",  desc:"Combo builds 2x faster total.",                                           cost:20,   bought:false,req:[2],          type:"combospeedII",     color:"#ff8844"},
-  {id:9, x:540,y:300, name:"Click Power II",   icon:"👊",  desc:"+100% to all click earnings.",                                             cost:25,   bought:false,req:[3],          type:"clickpct",  val:1.0,  color:"#44ff88"},
-  {id:10,x:710,y:300, name:"Cash Bonus II",    icon:"💵",  desc:"+10% to all cash earned.",                                                cost:20,   bought:false,req:[4],          type:"cashbonus",val:0.10,color:"#ffcc44"},
-  {id:11,x:890,y:300, name:"Frenzy Boost II",  icon:"⚡",  desc:"Frenzy cooldown halved total. Duration +4s total.",                       cost:25,   bought:false,req:[5],          type:"frenzybuff2",      color:"#ff4466"},
-  {id:12,x:1070,y:300, name:"Biz Speed I",       icon:"⏩",  desc:"All businesses run 1.5x faster permanently.",                              cost:30,   bought:false,req:[0],          type:"bizspeednode",val:1.5,color:"#44ffcc"},
-  {id:13,x:140, y:420, name:"Auto Clicker III", icon:"🖱️",  desc:"Auto-clicks 10 times per second.",                                        cost:40,   bought:false,req:[6],          type:"autoclickIII",     color:"#44aaff"},
-  {id:14,x:270,y:420, name:"Token Miner I",    icon:"⬡",   desc:"Earn 1.1x tokens per prestige (1.1x total).",                                       cost:50,   bought:false,req:[6,7],        type:"tokenmult",val:1.1,   color:"#cc44ff"},
-  {id:15,x:370,y:420, name:"Auto Upgrade",     icon:"📦",  desc:"Buys cheapest upgrade every 15s.",                                        cost:30,   bought:false,req:[7],          type:"autoupgrade",      color:"#aa44ff"},
-  {id:16,x:540,y:420, name:"Click Power III",  icon:"👊",  desc:"+200% to all click earnings.",                                            cost:40,   bought:false,req:[9],          type:"clickpct",  val:2.0,  color:"#44ff88"},
-  {id:17,x:710,y:420, name:"Cash Bonus III",   icon:"💵",  desc:"+20% to all cash earned.",                                                cost:30,   bought:false,req:[10],         type:"cashbonus",val:0.20, color:"#ffcc44"},
-  {id:18,x:890,y:420, name:"Mega Frenzy",      icon:"🔥",  desc:"Unlock Mega Frenzy button.",                                              cost:30,   bought:false,req:[11],         type:"unlock_mega",      color:"#ff8800"},
-  {id:19,x:1070,y:420, name:"Biz Speed II",      icon:"⏩",  desc:"All businesses run 2x faster total.",                                    cost:50,  bought:false,req:[12],         type:"bizspeednode",val:2,color:"#44ffcc"},
-  {id:20,x:140, y:540, name:"Auto Clicker IV",  icon:"🖱️",  desc:"Auto-clicks 25 times per second.",                                        cost:80,  bought:false,req:[13],         type:"autoclickIV",      color:"#44aaff"},
-  {id:21,x:270,y:540, name:"Token Miner II",   icon:"⬡",   desc:"Earn 1.2x tokens per prestige (1.32x total with Miner I).",                                      cost:150,  bought:false,req:[14],         type:"tokenmult",val:1.2,   color:"#cc44ff"},
-  {id:22,x:370,y:540, name:"Bulk Consumer I",  icon:"🛍️",  desc:"All consumable cooldowns 20% shorter.",                                cost:60,  bought:false,req:[15],         type:"cdreduce",val:0.8,     color:"#ff88cc"},
-  {id:23,x:540,y:540, name:"Click Chain I",    icon:"🔗",  desc:"Each click has a 20% chance to fire 2 bonus auto-clicks.",               cost:80,  bought:false,req:[16],         type:"clickchain",val:0.2,color:"#44ff88"},
-  {id:24,x:710,y:540, name:"Cash Bonus IV",    icon:"💵",  desc:"+40% to all cash earned.",                                       cost:80,  bought:false,req:[17],         type:"cashbonus",val:0.40, color:"#ffcc44"},
-  {id:25,x:840,y:540, name:"Income Boost I",   icon:"📊",  desc:"All business income +50% forever.",                                        cost:100,  bought:false,req:[17],         type:"incomemult",val:1.5,  color:"#44ff88"},
-  {id:26,x:960,y:540, name:"Frenzy Auto",      icon:"⚡",  desc:"Frenzy activates automatically.",                                        cost:60,  bought:false,req:[11,18],      type:"autofrenzy",       color:"#ff4466"},
-  {id:27,x:1070,y:540, name:"Mega Auto",        icon:"🔥",  desc:"Mega Frenzy activates automatically.",                                   cost:80,  bought:false,req:[26],         type:"automegafrenzy",   color:"#ff8800"},
-  {id:28,x:140, y:660, name:"Auto Clicker V",   icon:"🖱️",  desc:"Auto-clicks 100 times per second.",                                      cost:180,  bought:false,req:[20],         type:"autoclickV",       color:"#44aaff"},
-  {id:29,x:270,y:660, name:"Token Miner III",  icon:"⬡",   desc:"Earn 1.3x tokens per prestige (1.72x total).",                                     cost:500,  bought:false,req:[21],         type:"tokenmult",val:1.3,  color:"#cc44ff"},
-  {id:30,x:370,y:660, name:"Bulk Consumer II", icon:"🛍️",  desc:"All consumable cooldowns 35% shorter (stacks with Bulk I).",                                cost:150,  bought:false,req:[22],         type:"cdreduce",val:0.65,     color:"#ff88cc"},
-  {id:31,x:540,y:660, name:"Click Chain II",   icon:"🔗",  desc:"Click chain chance 50%, fires 4 bonus clicks.",                         cost:220,  bought:false,req:[23],         type:"clickchain2",      color:"#44ff88"},
-  {id:32,x:710,y:660, name:"Cash Bonus V",     icon:"💵",  desc:"+75% to all cash earned.",                                               cost:200,  bought:false,req:[24],         type:"cashbonus",val:0.75, color:"#ffcc44"},
-  {id:33,x:840,y:660, name:"Income Boost II",  icon:"📊",  desc:"All business income +150% total.",                                         cost:250,  bought:false,req:[25],         type:"incomemult",val:2.5,  color:"#44ff88"},
-  {id:34,x:960,y:660, name:"Cooldown Reducer", icon:"⏱️",  desc:"All consumable cooldowns -40%.",                                        cost:180,  bought:false,req:[25,22],      type:"cdreduce",val:0.6,  color:"#44ffcc"},
-  {id:35,x:1070,y:660, name:"Biz Speed III",    icon:"⏩",  desc:"All businesses run 4x faster total.",                                   cost:220,  bought:false,req:[19],         type:"bizspeednode",val:4,color:"#44ffcc"},
-  {id:36,x:140, y:780, name:"Auto Clicker VI",  icon:"🖱️",  desc:"Auto-clicks 500 times per second.",                                      cost:400, bought:false,req:[28],         type:"autoclickVI",      color:"#44aaff"},
-  {id:37,x:270,y:780, name:"Token Surge I",    icon:"⬡",   desc:"Earn 1.5x tokens per prestige (2.57x total).",                                     cost:1200, bought:false,req:[29],         type:"tokenmult",val:1.5,  color:"#cc44ff"},
-  {id:38,x:370,y:780, name:"Bulk Consumer III",icon:"🛍️",  desc:"All consumable cooldowns 50% shorter (stacks with Bulk I & II).",                               cost:250,  bought:false,req:[30],         type:"cdreduce",val:0.5,    color:"#ff88cc"},
-  {id:39,x:540,y:780, name:"Click God",        icon:"👊",  desc:"Clicks earn 50x. Combo locks at max.",                                  cost:550, bought:false,req:[31],         type:"clickgod",         color:"#44ff88"},
-  {id:40,x:710,y:780, name:"Cash Bonus VI",    icon:"💵",  desc:"+150% to all cash earned.",                                               cost:400, bought:false,req:[32],         type:"cashbonus",val:1.5, color:"#ffcc44"},
-  {id:41,x:840,y:780, name:"Prestige Booster", icon:"✨",  desc:"Prestige income multiplier raised from 1.2x to 1.4x per prestige.",             cost:400, bought:false,req:[33],         type:"prestigeboostnode",color:"#cc44ff"},
-  {id:42,x:960,y:780, name:"Mega Cooldown",    icon:"❄️",  desc:"All consumable cooldowns -70% total.",                                   cost:300, bought:false,req:[34],         type:"cdreduce",val:0.5,  color:"#44ffcc"},
-  {id:43,x:1070,y:780, name:"Omega Speed",      icon:"⏩",  desc:"All businesses run 15x faster total.",                                   cost:450, bought:false,req:[35],         type:"bizspeednode",val:15,color:"#44ffcc"},
-  {id:44,x:140, y:900, name:"Auto Clicker MAX", icon:"🖱️",  desc:"Auto-clicks 2000 times per second.",                                     cost:600, bought:false,req:[36],         type:"autoclickMAX",     color:"#44aaff"},
-  {id:45,x:270,y:900, name:"Token Surge II",   icon:"⬡",   desc:"Earn 1.8x tokens per prestige (4.63x total).",                                    cost:3000, bought:false,req:[37],         type:"tokenmult",val:1.8, color:"#cc44ff"},
-  {id:46,x:540,y:900, name:"Passive Empire",   icon:"🏙️",  desc:"+$50K/sec passive income permanently.",                                   cost:500, bought:false,req:[39,41],      type:"baseincome",val:50000,color:"#ffcc44"},
-  {id:47,x:710,y:900, name:"Cash Bonus VII",   icon:"💵",  desc:"+250% to all cash earned.",                                              cost:600, bought:false,req:[40],         type:"cashbonus",val:2.5,color:"#ffcc44"},
-  {id:48,x:840,y:900, name:"Prestige Surge",   icon:"✨",  desc:"Prestige multiplier raised to 2.1x per prestige (stacks with Booster).",                              cost:600, bought:false,req:[41],         type:"prestigeboostnode2",color:"#cc44ff"},
-  {id:49,x:1070,y:900, name:"Absolute Speed",   icon:"⏩",  desc:"All businesses run 50x faster.",                                        cost:700, bought:false,req:[43],         type:"bizspeednode",val:50,color:"#44ffcc"},
-  {id:50,x:270,y:1020,name:"Token God",        icon:"⬡",   desc:"Earn 2x tokens per prestige (9.26x total).",                                    cost:5000, bought:false,req:[45],         type:"tokenmult",val:2, color:"#cc44ff"},
-  {id:51,x:540,y:1020,name:"Infinite Wealth",  icon:"∞",   desc:"+$500K/sec passive income permanently.",                                   cost:1500,bought:false,req:[46,47],      type:"baseincome",val:500000,color:"#ffcc44"},
-  {id:52,x:710,y:1020,name:"Click Universe",   icon:"🌌",  desc:"Clicks earn 50x. A massive but fair endgame click boost.",               cost:1800,bought:false,req:[39,48],      type:"clickuniverse",    color:"#44ff88"},
-  {id:53,x:1070,y:1020,name:"Max Speed",        icon:"⏩",  desc:"All businesses run 200x faster.",                        cost:1200, bought:false,req:[49],         type:"bizspeednode",val:200,color:"#44ffcc"},
-  {id:54,x:640,y:1140,name:"GODMODE",           icon:"👑",  desc:"Unlock all systems, +50% cash, +100% business income, 1.5x clicks, -30% cooldowns, +25% prestige tokens.",     cost:2500,bought:false,req:[50,51,52,53],type:"godmode",    color:"#ffd700"},
-  {id:55,x:1260,y:300, name:"Time Bank",       icon:"🏦",  desc:"Unlock instant income payouts — spend tokens for cash equal to your $/sec × time. Payouts can be bought repeatedly.",cost:8,bought:false,req:[0],type:"timebank_unlock",color:"#ffcc44"},
-  {id:56,x:1260,y:420, name:"1 Min Payout",    icon:"⏱️",  desc:"Instantly earn 1 minute of your current $/sec. Repeatable — buy as many times as you like.",cost:3,  bought:false,req:[55],type:"timebank_pay",val:60,   color:"#ffcc44"},
-  {id:57,x:1260,y:540, name:"10 Min Payout",   icon:"🕐",  desc:"Instantly earn 10 minutes of your current $/sec. Repeatable.",cost:15, bought:false,req:[55],type:"timebank_pay",val:600,  color:"#ffcc44"},
-  {id:58,x:1260,y:660, name:"1 Hr Payout",     icon:"🕑",  desc:"Instantly earn 1 hour of your current $/sec. Repeatable.",cost:50,bought:false,req:[55],type:"timebank_pay",val:3600, color:"#ffaa00"},
-  {id:59,x:1260,y:780, name:"12 Hr Payout",    icon:"🕛",  desc:"Instantly earn 12 hours of your current $/sec. Repeatable.",cost:200,bought:false,req:[55],type:"timebank_pay",val:43200,color:"#ff8844"},
-  {id:60,x:1260,y:900, name:"1 Day Payout",    icon:"📅",  desc:"Instantly earn 24 hours of your current $/sec. Repeatable.",cost:600,bought:false,req:[55],type:"timebank_pay",val:86400,color:"#ff4444"},
-  {id:61,x:1260,y:1020,name:"1 Week Payout",   icon:"📆",  desc:"Instantly earn 1 week of your current $/sec. Repeatable. The ultimate token sink.",cost:2000,bought:false,req:[55],type:"timebank_pay",val:604800,color:"#cc44ff"},
-  {id:62,x:10,y:180,  name:"Consumables I",   icon:"🧪", desc:"Unlock Tier 1 consumables (Energy Drink, Lucky Coin, Megaphone).",cost:5,  bought:false,req:[0],  type:"consumable_tier",tierVal:1,color:"#ff8844"},
-  {id:63,x:10,y:300,  name:"Consumables II",  icon:"🧪", desc:"Unlock Tier 2 consumables (Speed Shot, Time Warp, Gold Rush, Rainbow Boost).",cost:20, bought:false,req:[62], type:"consumable_tier",tierVal:2,color:"#ff8844"},
-  {id:64,x:10,y:420,  name:"Consumables III", icon:"🧪", desc:"Unlock Tier 3 consumables (Adrenaline, Cloner, Overclock, Jackpot).",cost:60, bought:false,req:[63], type:"consumable_tier",tierVal:3,color:"#ff8844"},
-  {id:65,x:10,y:540,  name:"Consumables IV",  icon:"🧪", desc:"Unlock Tier 4 consumables (Diamond Hands, Time Crystal, Neon Storm).",cost:200,bought:false,req:[64], type:"consumable_tier",tierVal:4,color:"#ff8844"},
-  {id:66,x:10,y:660,  name:"Consumables V",   icon:"🧪", desc:"Unlock Tier 5 consumables (Omega Warp, Void Tap, Business Frenzy, Combo Surge).",cost:800,bought:false,req:[65], type:"consumable_tier",tierVal:5,color:"#ff4444"},
-  {id:67,x:790,y:60,  name:"Combo Strike",  icon:"🥊",  desc:"Unlock the combo multiplier — click repeatedly to build it up for bigger earnings.",cost:3,bought:false,req:[0],type:"combo_unlock",color:"#ffcc44"},
-  {id:68,x:790,y:180, name:"Combo King",     icon:"👑", desc:"Max combo cap raised to 15x. Works best with high combo speed.", cost:8,  bought:false,req:[67], type:"combocap",   val:15, color:"#ffcc44"},
-  {id:69,x:790,y:300, name:"Time is Money",  icon:"⏳", desc:"Combo window lasts 3x longer before it starts to decay.",        cost:12, bought:false,req:[68], type:"combotimer", val:3,  color:"#ffcc44"},
-  {id:70,x:1070,y:180,  name:"Buy All",          icon:"🛒",  desc:"Unlocks Buy All buttons on every panel.",cost:10,bought:false,req:[0],type:"unlock_buyall",color:"#44ffcc"}
+    {id:1, x:190,y:180, name:"Auto Clicker I",   icon:"🖱️",  desc:"Auto-clicks once every 3 seconds.",                                        cost:12,   bought:false,req:[0],          type:"autoclickI",       color:"#44aaff"},
+    {id:2, x:370,y:180, name:"Combo Speed I",    icon:"🔥",  desc:"Combo builds 1.5x faster.",                                                cost:10,   bought:false,req:[0],          type:"combospeedI",      color:"#ff8844"},
+    {id:3, x:540,y:180, name:"Click Power I",    icon:"👊",  desc:"+50% to all click earnings.",                                                cost:10,   bought:false,req:[0],          type:"clickpct",  val:0.5,  color:"#44ff88"},
+    {id:4, x:710,y:180, name:"Cash Bonus I",     icon:"💵",  desc:"+5% to all cash earned.",                                                 cost:10,   bought:false,req:[0],          type:"cashbonus",val:0.05, color:"#ffcc44"},
+    {id:5, x:890,y:180, name:"Frenzy Boost I",   icon:"⚡",  desc:"Frenzy cooldown -30%. Frenzy lasts 2s longer.",                           cost:15,   bought:false,req:[0],          type:"frenzybuff",       color:"#ff4466"},
+    {id:6, x:140, y:300, name:"Auto Clicker II",  icon:"🖱️",  desc:"Auto-clicks 3 times per second.",                                         cost:25,   bought:false,req:[1],          type:"autoclickII",      color:"#44aaff"},
+    {id:7, x:270,y:300, name:"Auto Investor",    icon:"📊",  desc:"Every 30s, automatically buys whichever business gives the best income per dollar spent.",cost:20,   bought:false,req:[1],          type:"autobuy",          color:"#44ff88"},
+    {id:8, x:370,y:300, name:"Combo Speed II",   icon:"🔥",  desc:"Combo builds 2x faster total.",                                           cost:20,   bought:false,req:[2],          type:"combospeedII",     color:"#ff8844"},
+    {id:9, x:540,y:300, name:"Click Power II",   icon:"👊",  desc:"+100% to all click earnings.",                                             cost:25,   bought:false,req:[3],          type:"clickpct",  val:1.0,  color:"#44ff88"},
+    {id:10,x:710,y:300, name:"Cash Bonus II",    icon:"💵",  desc:"+10% to all cash earned.",                                                cost:20,   bought:false,req:[4],          type:"cashbonus",val:0.10,color:"#ffcc44"},
+    {id:11,x:890,y:300, name:"Frenzy Boost II",  icon:"⚡",  desc:"Frenzy cooldown halved total. Duration +4s total.",                       cost:25,   bought:false,req:[5],          type:"frenzybuff2",      color:"#ff4466"},
+    {id:12,x:1070,y:300, name:"Biz Speed I",       icon:"⏩",  desc:"All businesses run 1.5x faster permanently.",                              cost:30,   bought:false,req:[0],          type:"bizspeednode",val:1.5,color:"#44ffcc"},
+    {id:13,x:140, y:420, name:"Auto Clicker III", icon:"🖱️",  desc:"Auto-clicks 10 times per second.",                                        cost:40,   bought:false,req:[6],          type:"autoclickIII",     color:"#44aaff"},
+    {id:14,x:270,y:420, name:"Token Miner I",    icon:"⬡",   desc:"Earn 1.1x tokens per prestige (1.1x total).",                                       cost:50,   bought:false,req:[6,7],        type:"tokenmult",val:1.1,   color:"#cc44ff"},
+    {id:15,x:370,y:420, name:"Auto Upgrade",     icon:"📦",  desc:"Buys cheapest upgrade every 15s.",                                        cost:30,   bought:false,req:[7],          type:"autoupgrade",      color:"#aa44ff"},
+    {id:16,x:540,y:420, name:"Click Power III",  icon:"👊",  desc:"+200% to all click earnings.",                                            cost:40,   bought:false,req:[9],          type:"clickpct",  val:2.0,  color:"#44ff88"},
+    {id:17,x:710,y:420, name:"Cash Bonus III",   icon:"💵",  desc:"+20% to all cash earned.",                                                cost:30,   bought:false,req:[10],         type:"cashbonus",val:0.20, color:"#ffcc44"},
+    {id:18,x:890,y:420, name:"Mega Frenzy",      icon:"🔥",  desc:"Unlock Mega Frenzy button.",                                              cost:30,   bought:false,req:[11],         type:"unlock_mega",      color:"#ff8800"},
+    {id:19,x:1070,y:420, name:"Biz Speed II",      icon:"⏩",  desc:"All businesses run 2x faster total.",                                    cost:50,  bought:false,req:[12],         type:"bizspeednode",val:2,color:"#44ffcc"},
+    {id:20,x:140, y:540, name:"Auto Clicker IV",  icon:"🖱️",  desc:"Auto-clicks 25 times per second.",                                        cost:80,  bought:false,req:[13],         type:"autoclickIV",      color:"#44aaff"},
+    {id:21,x:270,y:540, name:"Token Miner II",   icon:"⬡",   desc:"Earn 1.2x tokens per prestige (1.32x total with Miner I).",                                      cost:150,  bought:false,req:[14],         type:"tokenmult",val:1.2,   color:"#cc44ff"},
+    {id:22,x:370,y:540, name:"Bulk Consumer I",  icon:"🛍️",  desc:"All consumable cooldowns 20% shorter.",                                cost:60,  bought:false,req:[15],         type:"cdreduce",val:0.8,     color:"#ff88cc"},
+    {id:23,x:710,y:540, name:"Cash Bonus IV",    icon:"💵",  desc:"+40% to all cash earned.",                                       cost:80,  bought:false,req:[17],         type:"cashbonus",val:0.40, color:"#ffcc44"},
+    {id:24,x:840,y:540, name:"Income Boost I",   icon:"📊",  desc:"All business income +50% forever.",                                        cost:100,  bought:false,req:[17],         type:"incomemult",val:1.5,  color:"#44ff88"},
+    {id:25,x:960,y:540, name:"Frenzy Auto",      icon:"⚡",  desc:"Frenzy activates automatically.",                                        cost:60,  bought:false,req:[11,18],      type:"autofrenzy",       color:"#ff4466"},
+    {id:26,x:1070,y:540, name:"Mega Auto",        icon:"🔥",  desc:"Mega Frenzy activates automatically.",                                   cost:80,  bought:false,req:[26],         type:"automegafrenzy",   color:"#ff8800"},
+    {id:27,x:140, y:660, name:"Auto Clicker V",   icon:"🖱️",  desc:"Auto-clicks 100 times per second.",                                      cost:180,  bought:false,req:[20],         type:"autoclickV",       color:"#44aaff"},
+    {id:28,x:270,y:660, name:"Token Miner III",  icon:"⬡",   desc:"Earn 1.3x tokens per prestige (1.72x total).",                                     cost:500,  bought:false,req:[21],         type:"tokenmult",val:1.3,  color:"#cc44ff"},
+    {id:29,x:370,y:660, name:"Bulk Consumer II", icon:"🛍️",  desc:"All consumable cooldowns 35% shorter (stacks with Bulk I).",                                cost:150,  bought:false,req:[22],         type:"cdreduce",val:0.65,     color:"#ff88cc"},
+    {id:30,x:710,y:660, name:"Cash Bonus V",     icon:"💵",  desc:"+75% to all cash earned.",                                               cost:200,  bought:false,req:[24],         type:"cashbonus",val:0.75, color:"#ffcc44"},
+    {id:31,x:840,y:660, name:"Income Boost II",  icon:"📊",  desc:"All business income +150% total.",                                         cost:250,  bought:false,req:[25],         type:"incomemult",val:2.5,  color:"#44ff88"},
+    {id:32,x:960,y:660, name:"Cooldown Reducer", icon:"⏱️",  desc:"All consumable cooldowns -40%.",                                        cost:180,  bought:false,req:[25,22],      type:"cdreduce",val:0.6,  color:"#44ffcc"},
+    {id:33,x:1070,y:660, name:"Biz Speed III",    icon:"⏩",  desc:"All businesses run 4x faster total.",                                   cost:220,  bought:false,req:[19],         type:"bizspeednode",val:4,color:"#44ffcc"},
+    {id:34,x:140, y:780, name:"Auto Clicker VI",  icon:"🖱️",  desc:"Auto-clicks 500 times per second.",                                      cost:400, bought:false,req:[28],         type:"autoclickVI",      color:"#44aaff"},
+    {id:35,x:270,y:780, name:"Token Surge I",    icon:"⬡",   desc:"Earn 1.5x tokens per prestige (2.57x total).",                                     cost:1200, bought:false,req:[29],         type:"tokenmult",val:1.5,  color:"#cc44ff"},
+    {id:36,x:370,y:780, name:"Bulk Consumer III",icon:"🛍️",  desc:"All consumable cooldowns 50% shorter (stacks with Bulk I & II).",                               cost:250,  bought:false,req:[30],         type:"cdreduce",val:0.5,    color:"#ff88cc"},
+    {id:37,x:540,y:780, name:"Click God",        icon:"👊",  desc:"Clicks earn 50x. Combo locks at max.",                                  cost:550, bought:false,req:[31],         type:"clickgod",         color:"#44ff88"},
+    {id:38,x:710,y:780, name:"Cash Bonus VI",    icon:"💵",  desc:"+150% to all cash earned.",                                               cost:400, bought:false,req:[32],         type:"cashbonus",val:1.5, color:"#ffcc44"},
+    {id:39,x:840,y:780, name:"Prestige Booster", icon:"✨",  desc:"Prestige income multiplier raised from 1.2x to 1.4x per prestige.",             cost:400, bought:false,req:[33],         type:"prestigeboostnode",color:"#cc44ff"},
+    {id:40,x:960,y:780, name:"Mega Cooldown",    icon:"❄️",  desc:"All consumable cooldowns -70% total.",                                   cost:300, bought:false,req:[34],         type:"cdreduce",val:0.5,  color:"#44ffcc"},
+    {id:41,x:1070,y:780, name:"Omega Speed",      icon:"⏩",  desc:"All businesses run 15x faster total.",                                   cost:450, bought:false,req:[35],         type:"bizspeednode",val:15,color:"#44ffcc"},
+    {id:42,x:140, y:900, name:"Auto Clicker MAX", icon:"🖱️",  desc:"Auto-clicks 2000 times per second.",                                     cost:600, bought:false,req:[36],         type:"autoclickMAX",     color:"#44aaff"},
+    {id:43,x:270,y:900, name:"Token Surge II",   icon:"⬡",   desc:"Earn 1.8x tokens per prestige (4.63x total).",                                    cost:3000, bought:false,req:[37],         type:"tokenmult",val:1.8, color:"#cc44ff"},
+    {id:44,x:540,y:900, name:"Passive Empire",   icon:"🏙️",  desc:"+$50K/sec passive income permanently.",                                   cost:500, bought:false,req:[39,41],      type:"baseincome",val:50000,color:"#ffcc44"},
+    {id:45,x:710,y:900, name:"Cash Bonus VII",   icon:"💵",  desc:"+250% to all cash earned.",                                              cost:600, bought:false,req:[40],         type:"cashbonus",val:2.5,color:"#ffcc44"},
+    {id:46,x:840,y:900, name:"Prestige Surge",   icon:"✨",  desc:"Prestige multiplier raised to 2.1x per prestige (stacks with Booster).",                              cost:600, bought:false,req:[41],         type:"prestigeboostnode2",color:"#cc44ff"},
+    {id:47,x:1070,y:900, name:"Absolute Speed",   icon:"⏩",  desc:"All businesses run 50x faster.",                                        cost:700, bought:false,req:[43],         type:"bizspeednode",val:50,color:"#44ffcc"},
+    {id:48,x:270,y:1020,name:"Token God",        icon:"⬡",   desc:"Earn 2x tokens per prestige (9.26x total).",                                    cost:5000, bought:false,req:[45],         type:"tokenmult",val:2, color:"#cc44ff"},
+    {id:49,x:540,y:1020,name:"Infinite Wealth",  icon:"∞",   desc:"+$500K/sec passive income permanently.",                                   cost:1500,bought:false,req:[46,47],      type:"baseincome",val:500000,color:"#ffcc44"},
+    {id:50,x:710,y:1020,name:"Click Universe",   icon:"🌌",  desc:"Clicks earn 50x. A massive but fair endgame click boost.",               cost:1800,bought:false,req:[39,48],      type:"clickuniverse",    color:"#44ff88"},
+    {id:51,x:1070,y:1020,name:"Max Speed",        icon:"⏩",  desc:"All businesses run 200x faster.",                        cost:1200, bought:false,req:[49],         type:"bizspeednode",val:200,color:"#44ffcc"},
+    {id:52,x:640,y:1140,name:"GODMODE",           icon:"👑",  desc:"Unlock all systems, +50% cash, +100% business income, 1.5x clicks, -30% cooldowns, +25% prestige tokens.",     cost:2500,bought:false,req:[50,51,52,53],type:"godmode",    color:"#ffd700"},
+    {id:53,x:1260,y:300, name:"Time Bank",       icon:"🏦",  desc:"Unlock instant income payouts — spend tokens for cash equal to your $/sec × time. Payouts can be bought repeatedly.",cost:8,bought:false,req:[0],type:"timebank_unlock",color:"#ffcc44"},
+    {id:54,x:1260,y:420, name:"1 Min Payout",    icon:"⏱️",  desc:"Instantly earn 1 minute of your current $/sec. Repeatable — buy as many times as you like.",cost:3,  bought:false,req:[55],type:"timebank_pay",val:60,   color:"#ffcc44"},
+    {id:55,x:1260,y:540, name:"10 Min Payout",   icon:"🕐",  desc:"Instantly earn 10 minutes of your current $/sec. Repeatable.",cost:15, bought:false,req:[55],type:"timebank_pay",val:600,  color:"#ffcc44"},
+    {id:56,x:1260,y:660, name:"1 Hr Payout",     icon:"🕑",  desc:"Instantly earn 1 hour of your current $/sec. Repeatable.",cost:50,bought:false,req:[55],type:"timebank_pay",val:3600, color:"#ffaa00"},
+    {id:57,x:1260,y:780, name:"12 Hr Payout",    icon:"🕛",  desc:"Instantly earn 12 hours of your current $/sec. Repeatable.",cost:200,bought:false,req:[55],type:"timebank_pay",val:43200,color:"#ff8844"},
+    {id:58,x:1260,y:900, name:"1 Day Payout",    icon:"📅",  desc:"Instantly earn 24 hours of your current $/sec. Repeatable.",cost:600,bought:false,req:[55],type:"timebank_pay",val:86400,color:"#ff4444"},
+    {id:59,x:1260,y:1020,name:"1 Week Payout",   icon:"📆",  desc:"Instantly earn 1 week of your current $/sec. Repeatable. The ultimate token sink.",cost:2000,bought:false,req:[55],type:"timebank_pay",val:604800,color:"#cc44ff"},
+    {id:60,x:10,y:180,  name:"Consumables I",   icon:"🧪", desc:"Unlock Tier 1 consumables (Energy Drink, Lucky Coin, Megaphone).",cost:5,  bought:false,req:[0],  type:"consumable_tier",tierVal:1,color:"#ff8844"},
+    {id:61,x:10,y:300,  name:"Consumables II",  icon:"🧪", desc:"Unlock Tier 2 consumables (Speed Shot, Time Warp, Gold Rush, Rainbow Boost).",cost:20, bought:false,req:[62], type:"consumable_tier",tierVal:2,color:"#ff8844"},
+    {id:62,x:10,y:420,  name:"Consumables III", icon:"🧪", desc:"Unlock Tier 3 consumables (Adrenaline, Cloner, Overclock, Jackpot).",cost:60, bought:false,req:[63], type:"consumable_tier",tierVal:3,color:"#ff8844"},
+    {id:63,x:10,y:540,  name:"Consumables IV",  icon:"🧪", desc:"Unlock Tier 4 consumables (Diamond Hands, Time Crystal, Neon Storm).",cost:200,bought:false,req:[64], type:"consumable_tier",tierVal:4,color:"#ff8844"},
+    {id:64,x:10,y:660,  name:"Consumables V",   icon:"🧪", desc:"Unlock Tier 5 consumables (Omega Warp, Void Tap, Business Frenzy, Combo Surge).",cost:800,bought:false,req:[65], type:"consumable_tier",tierVal:5,color:"#ff4444"},
+    {id:65,x:790,y:60,  name:"Combo Strike",  icon:"🥊",  desc:"Unlock the combo multiplier — click repeatedly to build it up for bigger earnings.",cost:3,bought:false,req:[0],type:"combo_unlock",color:"#ffcc44"},
+    {id:66,x:790,y:180, name:"Combo King",     icon:"👑", desc:"Max combo cap raised to 15x. Works best with high combo speed.", cost:8,  bought:false,req:[67], type:"combocap",   val:15, color:"#ffcc44"},
+    {id:67,x:790,y:300, name:"Time is Money",  icon:"⏳", desc:"Combo window lasts 3x longer before it starts to decay.",        cost:12, bought:false,req:[68], type:"combotimer", val:3,  color:"#ffcc44"},
+    {id:68,x:1070,y:180,  name:"Buy All",          icon:"🛒",  desc:"Unlocks Buy All buttons on every panel.",cost:10,bought:false,req:[0],type:"unlock_buyall",color:"#44ffcc"}
 ];
 
 // Returns how long (seconds) you have to click again before losing that combo level.
@@ -926,11 +941,7 @@ function handleClick(e){
   if(rainbowActive||megaFrenzyActive||comboMaxActive)spawnRainbowBurst(fx,fy,comboMaxActive?30:(rainbowActive?20:10));
   if(combo>=perkEffects.comboCap)spawnShockwave(fx,fy);
   // Click chain — chance to fire bonus auto-clicks
-  if(clickChainChance>0&&Math.random()<clickChainChance){
-    var chainEarned=clickValue*clickMult*(frenzyActive?5:1)*(megaFrenzyActive?15:1)*globalMult*prestigeMult*combo;
-    for(var ci=0;ci<clickChainCount;ci++){addMoney(chainEarned);}
-    floaties.push({x:fx+30,y:fy-20,vy:-2,life:0.8,text:"⛓ x"+clickChainCount+"!",color:"#44ff88",sz:11});
-  }
+  // Click chain is now a visual manual mechanic — see tickChainSpawn in game loop
   updateUI();
 }
 
@@ -1212,8 +1223,6 @@ function applyTreeNode(node){
   if(node.type==="frenzybuff"){frenzyCdMax*=0.7;frenzyDur+=2;toast("Frenzy CD -30%, duration +2s!","#ff4466");}
   if(node.type==="frenzybuff2"){frenzyCdMax*=0.5;frenzyDur+=2;toast("Frenzy CD halved, duration +4s total!","#ff4466");}
   if(node.type==="bizspeednode"){perkEffects.bizSpeedBonus=(perkEffects.bizSpeedBonus||0)+node.val;toast("Business speed bonus +"+node.val+"x added!","#44ffcc");calcPerSec();}
-  if(node.type==="clickchain"){clickChainChance=node.val;toast("Click chain unlocked! 20% double-click!","#44ff88");}
-  if(node.type==="clickchain2"){clickChainChance=0.5;clickChainCount=4;toast("Click chain 50%! Fires 4 bonus clicks!","#44ff88");}
   if(node.type==="clickgod"){clickValue*=10;toast("CLICK GOD! 10x clicks!","#44ff88");}
   if(node.type==="clickuniverse"){clickValue*=50;toast("CLICK UNIVERSE! 50x clicks!","#44ff88");}
   if(node.type==="prestigeboostnode"){prestigeBaseMult=1.4;toast("Prestige multiplier improved to 1.4x per prestige!","#cc44ff");}
@@ -1271,7 +1280,135 @@ function applyTreeNode(node){
 }
 
 // Build HTML tree — called once on open and after each purchase
-// ── SKILL TREE — HTML div nodes, scroll viewport ──
+// ── VISUAL CLICK CHAIN ──
+var chainActive=true;  // always on from start
+var chainStep=0;
+var chainTimeoutId=null;
+var CHAIN_TIMEOUT=4000;
+var chainFloatBtn=null;
+
+function getChainZone(){
+  // Get mid-area bounds to know where to place chain buttons
+  var mid=document.getElementById("mid-area");
+  var clickZone=document.getElementById("click-zone");
+  if(!mid||!clickZone)return null;
+  var midR=mid.getBoundingClientRect();
+  var czR=clickZone.getBoundingClientRect();
+  // Use the LEFT empty space: from mid-area left edge to click zone left edge
+  // and RIGHT empty space: from click zone right edge to mid-area right edge
+  // Randomly pick left or right side each time
+  var side=Math.random()<0.5?"left":"right";
+  var zone;
+  if(side==="left"){
+    zone={x1:midR.left+30, x2:czR.left-60, y1:midR.top+30, y2:midR.bottom-30};
+  } else {
+    zone={x1:czR.right+60, x2:midR.right-30, y1:midR.top+30, y2:midR.bottom-30};
+  }
+  if(zone.x2-zone.x1<50) zone={x1:midR.left+20,x2:midR.left+200,y1:midR.top+30,y2:midR.bottom-30};
+  return zone;
+}
+
+function spawnChainBtn(){
+  // Remove old button if any
+  if(chainFloatBtn){chainFloatBtn.remove();chainFloatBtn=null;}
+  var overlay=document.getElementById("chain-overlay");
+  if(!overlay||!chainActive)return;
+
+  var zone=getChainZone();
+  if(!zone)return;
+
+  var isFinal=(chainStep===4);
+  var btn=document.createElement("div");
+  btn.className="chain-float-btn"+(isFinal?" final":"");
+  btn.textContent=isFinal?"💰":"💵";
+  btn.title="Chain "+(chainStep+1)+"/5";
+
+  // Random position within zone, avoid edges
+  var x=zone.x1+Math.random()*(zone.x2-zone.x1);
+  var y=zone.y1+Math.random()*(zone.y2-zone.y1);
+  btn.style.left=(x-23)+"px";
+  btn.style.top=(y-23)+"px";
+
+  btn.addEventListener("click",function(){
+    btn.style.transform="scale(0.85)";
+    setTimeout(function(){handleChainClick();},80);
+  });
+
+  overlay.appendChild(btn);
+  chainFloatBtn=btn;
+
+  // Timeout to reset if too slow
+  if(chainTimeoutId){clearTimeout(chainTimeoutId);}
+  chainTimeoutId=setTimeout(function(){
+    toast("⛓️ Chain broken! Too slow.","#ff4444");
+    resetChain();
+  },CHAIN_TIMEOUT);
+}
+
+function handleChainClick(){
+  if(!chainActive)return;
+  if(chainTimeoutId){clearTimeout(chainTimeoutId);chainTimeoutId=null;}
+
+  chainStep++;
+
+  if(chainStep>=5){
+    // Chain complete!
+    if(chainFloatBtn){chainFloatBtn.remove();chainFloatBtn=null;}
+    var payout=clickValue*clickMult*combo*(1+globalIncomeBonus)*prestigeMult*100;
+    addMoney(payout);
+    var cx=window.innerWidth*0.35, cy=window.innerHeight*0.45;
+    spawnRainbowBurst(cx,cy,14);
+    floaties.push({x:cx,y:cy-30,vy:-2.5,life:1.4,text:"⛓️ CHAIN! +"+fmt(payout),color:"#ffcc44",sz:13});
+    toast("⛓️ Chain complete! +"+fmt(payout),"#ffcc44");
+    chainInProgress=false;
+    chainStep=0;
+    chainTimerSecs=0; // restart the ramp timer
+  } else {
+    // Spawn next button at a new random position
+    spawnChainBtn();
+  }
+}
+
+// Chain spawns on a time-based ramping chance — like golden cookies from Cookie Clicker
+// Chance starts very low and ramps up over 3-8 minutes until it's near-guaranteed
+var chainTimerSecs=0;         // seconds since last chain (or since unlock)
+var chainMinSecs=180;         // minimum 3 minutes before any chance
+var chainMaxSecs=480;         // by 8 minutes it's essentially guaranteed
+var chainInProgress=false;
+
+function tickChainSpawn(dt){
+  if(!chainActive||chainInProgress)return;
+  chainTimerSecs+=dt;
+  if(chainTimerSecs<chainMinSecs)return; // no chance before 3 min
+  // Ramp from 0% at 3min to ~100% at 8min
+  // Check every second: chance = (timeSinceMin / window) * 0.015 per frame at 60fps
+  // Simplified: per dt, chance = (progress^2) * dt * 0.008
+  var progress=(chainTimerSecs-chainMinSecs)/Math.max(1,chainMaxSecs-chainMinSecs);
+  progress=Math.min(1,progress);
+  var chancePerSec=progress*progress*0.4; // quadratic ramp: 0% at min, ~40%/s at max
+  if(Math.random()<chancePerSec*dt){
+    chainInProgress=true;
+    chainStep=0;
+    chainTimerSecs=0; // reset timer
+    toast("💵 Money Chain appeared! Find it!","#44ff88");
+    setTimeout(spawnChainBtn,300);
+  }
+}
+
+function initChain(){
+  chainActive=true;
+  chainInProgress=false;
+  chainTimerSecs=0;
+}
+
+function resetChain(){
+  chainStep=0;
+  chainInProgress=false;
+  chainTimerSecs=0; // reset — player must wait again
+  if(chainTimeoutId){clearTimeout(chainTimeoutId);chainTimeoutId=null;}
+  if(chainFloatBtn){chainFloatBtn.remove();chainFloatBtn=null;}
+}
+
 function reqsMet(node){
   for(var i=0;i<node.req.length;i++) if(!treeNodes[node.req[i]].bought) return false;
   return true;
@@ -1665,7 +1802,8 @@ function loop(){
       if(prev>0&&consumables[i].cdLeft===0)listsDirty=true;
     }
   }
-  if(autoFrenzy&&frenzyUnlocked&&frenzyCd<=0&&!frenzyActive)activateFrenzy();
+  // Money chain timer
+  tickChainSpawn(dt);
   if(autoMegaFrenzy&&megaFrenzyUnlocked&&megaFrenzyCd<=0&&!megaFrenzyActive)activateMegaFrenzy();
   if(autoClickRate>0){
     autoClickTimer+=dt;var ai=1/autoClickRate;
@@ -1992,7 +2130,7 @@ function confirmWipe(){
   clickValue=1;clickMult=1;incomeBoost=1;globalMult=1;cashBonusMult=0;cdReduceMult=1;
   bulkBuyCount=1;autoClickRate=0;autoBuyActive=false;autoUpgradeActive=false;
   autoFrenzy=false;autoMegaFrenzy=false;
-  clickChainChance=0;clickChainCount=2;
+  chainActive=false;chainStep=0;if(chainTimeoutId){clearTimeout(chainTimeoutId);chainTimeoutId=null;}if(chainFloatBtn){chainFloatBtn.remove();chainFloatBtn=null;}
   perkEffects={comboCap:8,comboTimerMult:1,luckyBoost:1,rainbowMult:1,costReduce:1,basePassive:0,bizSpeedMult:1,bizSpeedBonus:0};
   for(var i=0;i<businesses.length;i++){businesses[i].owned=0;businesses[i].timer=0;businesses[i].mult=1;}
   for(var i=0;i<upgrades.length;i++)upgrades[i].bought=false;
