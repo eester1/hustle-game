@@ -249,7 +249,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v69</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v70</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -2314,12 +2314,9 @@ async function linkSlot(){
   if(score<=0){lbStatus("No earnings yet!","#ff4444");return;}
 
   lbStatus("Linking...","#555");
-  // If already linked under a different name, remove the old entry first
+  // Do remove-old + add-new in a SINGLE read→modify→write to avoid race condition
   var oldName=lbLinkedName;
-  if(oldName&&oldName!==name){
-    await removeScore(oldName);
-  }
-  var ok=await pushScore(name,score);
+  var ok=await upsertScore(oldName!==name?oldName:null, name, score);
   if(ok){
     lbLinkedSlot=(val==="current")?"current":parseInt(val);
     lbLinkedName=name;
@@ -2332,19 +2329,21 @@ async function linkSlot(){
   }
 }
 
-async function pushScore(name,score){
+// Single atomic read→modify→write — removes old name AND upserts new in one operation
+async function upsertScore(removeOldName, newName, newScore){
   try{
-    // Read current scores, upsert this player's entry, write back
     var resp=await fetch(LB_URL);
     if(!resp.ok)throw new Error();
     var data=await resp.json();
     var scores=data.scores||[];
-    // Find existing entry for this name and update, or add new
-    var idx=scores.findIndex(function(e){return e.name===name;});
-    var entry={name:name,score:score,ts:Date.now()};
+    // Remove old name entry if provided
+    if(removeOldName) scores=scores.filter(function(e){return e.name!==removeOldName;});
+    // Upsert new entry
+    var entry={name:newName,score:newScore,ts:Date.now()};
+    var idx=scores.findIndex(function(e){return e.name===newName;});
     if(idx>=0)scores[idx]=entry;
     else scores.push(entry);
-    // Write back
+    // Single write
     var put=await fetch(LB_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -2354,17 +2353,15 @@ async function pushScore(name,score){
   }catch(e){return false;}
 }
 
+async function pushScore(name,score){return upsertScore(null,name,score);}
+
 async function removeScore(name){
   try{
     var resp=await fetch(LB_URL);
     if(!resp.ok)return false;
     var data=await resp.json();
     var scores=(data.scores||[]).filter(function(e){return e.name!==name;});
-    var put=await fetch(LB_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({scores:scores})
-    });
+    var put=await fetch(LB_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scores:scores})});
     return put.ok;
   }catch(e){return false;}
 }
