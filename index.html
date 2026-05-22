@@ -14,6 +14,10 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
 #per-sec { font-size: 11px; color: #ffcc44; }
 #hustle-tokens { font-size: 11px; color: #cc44ff; margin-top: 1px; }
 #prestige-preview { font-size: 10px; color: #884ab0; margin-top: 1px; }
+#chain-timer-wrap { margin-top: 4px; width: 100%; max-width: 110px; display: none; }
+#chain-timer-label { font-size: 9px; color: #2a5530; display: flex; justify-content: space-between; margin-bottom: 2px; }
+#chain-timer-bar-bg { height: 4px; background: #111; border-radius: 2px; overflow: hidden; }
+#chain-timer-bar { height: 4px; width: 0%; border-radius: 2px; background: #44ff88; transition: background 0.5s; }
 #right-hud { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
 #level-display { font-size: 12px; color: #44aaff; font-weight: bold; }
 #xp-bar-wrap { width: 90px; height: 4px; background: #1a1a1a; border-radius: 3px; margin-left: auto; overflow: hidden; }
@@ -286,10 +290,14 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
       <div id="hustle-tokens">⬡ 0 Hustle Tokens</div>
       <div id="prestige-preview"></div>
       <div id="player-count" style="font-size:10px;color:#444;margin-top:1px;">🟢 checking...</div>
+      <div id="chain-timer-wrap">
+        <div id="chain-timer-label"><span>💵 Chain</span><span id="chain-timer-pct">0%</span></div>
+        <div id="chain-timer-bar-bg"><div id="chain-timer-bar"></div></div>
+      </div>
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v93</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v94</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1377,19 +1385,38 @@ var chainMaxSecs=480;         // by 8 minutes it's essentially guaranteed
 var chainInProgress=false;
 
 function tickChainSpawn(dt){
-  if(!chainActive||chainInProgress)return;
+  if(!chainActive)return;
+
+  // Update bar visibility
+  var wrap=document.getElementById("chain-timer-wrap");
+  if(wrap) wrap.style.display=chainInProgress?"none":"block";
+
+  if(chainInProgress)return;
   chainTimerSecs+=dt;
-  if(chainTimerSecs<chainMinSecs)return; // no chance before 3 min
-  // Ramp from 0% at 3min to ~100% at 8min
-  // Check every second: chance = (timeSinceMin / window) * 0.015 per frame at 60fps
-  // Simplified: per dt, chance = (progress^2) * dt * 0.008
-  var progress=(chainTimerSecs-chainMinSecs)/Math.max(1,chainMaxSecs-chainMinSecs);
-  progress=Math.min(1,progress);
-  var chancePerSec=progress*progress*0.4; // quadratic ramp: 0% at min, ~40%/s at max
+
+  // Calculate progress and spawn chance
+  var rawProgress=chainTimerSecs/chainMaxSecs; // 0 to 1 over full 8 min
+  var spawnProgress=Math.max(0,(chainTimerSecs-chainMinSecs)/Math.max(1,chainMaxSecs-chainMinSecs));
+  spawnProgress=Math.min(1,spawnProgress);
+  var chancePct=Math.round(spawnProgress*spawnProgress*100);
+
+  // Update bar — bar fills over full 8 min, color shifts green→yellow→orange as chance rises
+  var barPct=Math.min(100,rawProgress*100);
+  var barEl=document.getElementById("chain-timer-bar");
+  var pctEl=document.getElementById("chain-timer-pct");
+  if(barEl){
+    barEl.style.width=barPct+"%";
+    barEl.style.background=chancePct>60?"#ff8844":chancePct>25?"#ffcc44":"#44ff88";
+  }
+  if(pctEl) pctEl.textContent=chancePct+"%";
+
+  if(chainTimerSecs<chainMinSecs)return;
+
+  var chancePerSec=spawnProgress*spawnProgress*0.4;
   if(Math.random()<chancePerSec*dt){
     chainInProgress=true;
     chainStep=0;
-    chainTimerSecs=0; // reset timer
+    chainTimerSecs=0;
     toast("💵 Money Chain appeared! Find it!","#44ff88");
     setTimeout(spawnChainBtn,300);
   }
