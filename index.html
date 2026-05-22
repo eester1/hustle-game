@@ -86,7 +86,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
 .biz-name { font-size: 11px; font-weight: 600; }
 .biz-owned { font-size: 10px; color: #555; }
 .biz-bar-wrap { height: 3px; background: #151515; border-radius: 2px; margin-top: 3px; overflow: hidden; }
-.biz-bar { height: 3px; border-radius: 2px; }
+.biz-bar { height: 3px; border-radius: 2px; transition: width 0.08s linear; }
 .biz-right { text-align: right; }
 .biz-cost { font-size: 11px; font-weight: bold; }
 .biz-income { font-size: 10px; color: #ffcc44; }
@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v114</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v115</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
