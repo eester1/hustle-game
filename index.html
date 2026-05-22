@@ -282,7 +282,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v81</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v82</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -485,7 +485,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
       <button id="wipe-btn" class="save-action-btn red" style="width:100%;padding:7px;font-size:11px;" onclick="showWipeConfirm()">⚠️ Wipe All Progress</button>
       <div id="wipe-confirm" style="display:none;background:#1a0000;border:1px solid #ff444460;border-radius:6px;padding:12px;margin-top:6px;">
         <div style="font-size:12px;color:#ff6666;font-weight:bold;margin-bottom:6px;">⚠️ Are you sure?</div>
-        <div style="font-size:11px;color:#888;margin-bottom:10px;">This will permanently delete ALL your progress — money, businesses, upgrades, skill tree, tokens, and all save slots. This cannot be undone.</div>
+        <div style="font-size:11px;color:#888;margin-bottom:10px;">This will reset your current run — money, businesses, upgrades, skill tree, tokens, and active progress. Your manual save slots will NOT be deleted so you can reload them anytime.</div>
         <div style="display:flex;gap:8px;">
           <button class="save-action-btn red" style="flex:1;padding:6px;" onclick="confirmWipe()">Yes, wipe everything</button>
           <button class="save-action-btn" style="flex:1;padding:6px;" onclick="cancelWipe()">Cancel</button>
@@ -1974,8 +1974,7 @@ function cancelWipe(){
   document.getElementById("wipe-btn").style.display="block";
 }
 function confirmWipe(){
-  // Wipe all localStorage for this game
-  for(var i=1;i<=NUM_SLOTS;i++) localStorage.removeItem(slotKey(i));
+  // Only clear the autosave — manual save slots are kept so players can reload them
   localStorage.removeItem(SAVE_KEY_PREFIX+"autosave");
   // Reset all game state to defaults
   money=0;totalEarned=0;xp=0;xpNeeded=100;playerLevel=1;
