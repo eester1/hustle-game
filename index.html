@@ -282,7 +282,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v86</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v87</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1497,7 +1497,7 @@ function renderBizList(){
   var html="";
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i],cost=bizCost(b),can=money>=cost;
-    var spd=Math.min(10,(perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)-1)),prog=b.owned>0?(b.timer/(b.interval/Math.max(0.01,spd)))*100:0;
+    var spd=Math.min(10,Math.max(1,perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0))),prog=b.owned>0?Math.min(100,(b.timer/(b.interval/spd))*100):0;
     var maxN=can?Math.floor(money/cost):0;
     var ttBody="Earns "+fmt(b.baseIncome)+" per "+b.interval+"s per unit owned. Auto-pays on its own timer.";
     var ttHint=b.owned>0?"Currently earning "+fmt(bizIncome(b))+" per payout ("+b.owned+" owned).":"Buy one to start earning passive income.";
@@ -1688,7 +1688,7 @@ function loop(){
     var b=businesses[i];if(b.owned<=0)continue;
     // Compute effective speed — tree node bonuses are additive, then capped at 10x total
     var treeSpeedBonus=perkEffects.bizSpeedBonus||0;
-    var effectiveSpeed=Math.min(10, perkEffects.bizSpeedMult + treeSpeedBonus - 1);
+    var effectiveSpeed=Math.min(10, Math.max(1, perkEffects.bizSpeedMult + treeSpeedBonus));
     b.timer+=dt*effectiveSpeed;
     // Cap cycles per frame to 10 to prevent spiral lag at very high speeds
     // Extra cycles still earn money (lumped into one payment) but don't each spawn floaties
@@ -1733,7 +1733,7 @@ function loop(){
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i];
     if(b.owned>0&&bizBars[i]){
-      var spd=Math.min(10,Math.max(0.01,(perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)-1)));
+      var spd=Math.min(10,Math.max(1,perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)));
       bizBars[i].style.width=Math.min(100,(b.timer/(b.interval/spd))*100)+"%";
     }
   }
