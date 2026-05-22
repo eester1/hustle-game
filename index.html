@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v111</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v113</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -784,11 +784,11 @@ var perks=[
   {name:"Speed Demon",        desc:"All businesses run 30% faster",        cost:12000,  owned:false,type:"bizspdpct",     val:0.30, req:-1},
   {name:"Double Down",        desc:"All businesses earn +150%",            cost:50000,  owned:false,type:"incomepct",     val:1.50, req:-1},
   {name:"Passive Millionaire",desc:"+$1K/sec passive income",              cost:100000, owned:false,type:"baseincome",    val:1000, req:-1},
-  {name:"Prestige Master",    desc:"Prestige income +50% per prestige",    cost:1e9,    owned:false,type:"prestigepct",   val:0.50, req:-1},
+  {name:"Prestige Master",    desc:"Prestige income +50% per prestige",    cost:1.5e9,    owned:false,type:"prestigepct",   val:0.50, req:-1},
   {name:"Turbo Business",     desc:"All businesses run 80% faster",        cost:2000000,owned:false,type:"bizspdpct",     val:0.80, req:-1},
   {name:"Mega Passive",       desc:"+$1M/sec passive income",              cost:1e7,    owned:false,type:"baseincome",    val:1e6,  req:-1},
-  {name:"Passive Titan",      desc:"+$10M/sec passive income",             cost:8e7,    owned:false,type:"baseincome",    val:1e7,  req:-1},
-  {name:"Passive Emperor",    desc:"+$100M/sec passive income",            cost:5e8,    owned:false,type:"baseincome",    val:1e8,  req:-1},
+  {name:"Passive Titan",      desc:"+$10M/sec passive income",             cost:1e8,    owned:false,type:"baseincome",    val:1e7,  req:-1},
+  {name:"Passive Emperor",    desc:"+$100M/sec passive income",            cost:1e9,    owned:false,type:"baseincome",    val:1e8,  req:-1},
   {name:"Passive Overlord",   desc:"+$500M/sec passive income",            cost:3e9,    owned:false,type:"baseincome",    val:5e8,  req:-1},
   {name:"Ultra Passive",      desc:"+$1B/sec passive income",              cost:1e10,   owned:false,type:"baseincome",    val:1e9,  req:-1},
   {name:"Monopoly",           desc:"All businesses earn 5x",               cost:5e10,   owned:false,type:"empireall",     val:5,    req:-1},
@@ -893,7 +893,12 @@ function comboWindowForLevel(c){
 }
 function bizCost(b){return Math.floor(b.baseCost*Math.pow(1.15,b.owned)*perkEffects.costReduce);}
 function bizIncome(b){return b.baseIncome*b.owned*b.mult*incomeBoost*globalMult*prestigeMult*(1+globalIncomeBonus);}
-function calcPerSec(){var tot=perkEffects.basePassive;for(var i=0;i<businesses.length;i++)if(businesses[i].owned>0)tot+=bizIncome(businesses[i])/businesses[i].interval;perSec=tot;}
+function calcPerSec(){
+  var spd=Math.min(20,Math.max(1,perkEffects.bizSpeedMult*(Math.max(1,1+(perkEffects.bizSpeedBonus||0)-1))));
+  var tot=perkEffects.basePassive;
+  for(var i=0;i<businesses.length;i++)if(businesses[i].owned>0)tot+=bizIncome(businesses[i])/(businesses[i].interval/spd);
+  perSec=tot;
+}
 function rainbowColor(t2){return"hsl("+((t2*90)%360)+",100%,65%)";}
 
 function addMoney(amt){
@@ -1675,7 +1680,7 @@ function renderBizList(){
   var html="";
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i],cost=bizCost(b),can=money>=cost;
-    var spd=Math.min(10,Math.max(1,perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0))),prog=b.owned>0?Math.min(100,(b.timer/(b.interval/spd))*100):0;
+    var spd=Math.min(20,Math.max(1,perkEffects.bizSpeedMult*(Math.max(1,1+(perkEffects.bizSpeedBonus||0)-1)))),prog=b.owned>0?Math.min(100,(b.timer/(b.interval/spd))*100):0;
     var maxN=can?Math.floor(money/cost):0;
     var ttBody="Earns "+fmt(b.baseIncome)+" per "+b.interval+"s per unit owned. Auto-pays on its own timer.";
     var ttHint=b.owned>0?"Currently earning "+fmt(bizIncome(b))+" per payout ("+b.owned+" owned).":"Buy one to start earning passive income.";
@@ -1865,9 +1870,12 @@ function loop(){
   if(autoUpgradeActive){autoUpgradeTimer+=dt;if(autoUpgradeTimer>=15){autoUpgradeTimer=0;for(var i=0;i<upgrades.length;i++){var u=upgrades[i];if(!u.bought&&money>=u.cost&&(u.reqIdx<0||businesses[u.reqIdx].owned>=u.req)){buyUpgrade(i);break;}}}}
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i];if(b.owned<=0)continue;
-    // Compute effective speed — tree node bonuses are additive, then capped at 10x total
+    // bizSpeedMult: perks/consumables multiply this (starts at 1)
+    // bizSpeedBonus: tree nodes add flat speed bonuses
+    // Combined: multiply them together, cap at 20x
     var treeSpeedBonus=perkEffects.bizSpeedBonus||0;
-    var effectiveSpeed=Math.min(10, Math.max(1, perkEffects.bizSpeedMult + treeSpeedBonus));
+    var effectiveSpeed=Math.min(20, perkEffects.bizSpeedMult * Math.max(1, 1+treeSpeedBonus-1));
+    effectiveSpeed=Math.max(1,effectiveSpeed);
     b.timer+=dt*effectiveSpeed;
     // Cap cycles per frame to 10 to prevent spiral lag at very high speeds
     // Extra cycles still earn money (lumped into one payment) but don't each spawn floaties
@@ -1914,7 +1922,7 @@ function loop(){
     var b=businesses[i];
     if(b.owned>0){
       if(bizBars[barIdx]){
-        var spd=Math.min(10,Math.max(1,perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)));
+        var spd=Math.min(20,Math.max(1,perkEffects.bizSpeedMult*(Math.max(1,1+(perkEffects.bizSpeedBonus||0)-1))));
         bizBars[barIdx].style.width=Math.min(100,(b.timer/(b.interval/spd))*100)+"%";
       }
       barIdx++;
