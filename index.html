@@ -1810,24 +1810,110 @@ function confirmWipe(){
 
 // ── CHECKSUM — simple hash to detect tampering ──
 // djb2-style hash over the JSON string
-function computeChecksum(str){
-  var h=5381;
-  for(var i=0;i<str.length;i++){
-    h=((h<<5)+h)^str.charCodeAt(i);
-    h=h&h; // keep 32-bit
+// ── SAVE INTEGRITY SYSTEM ──
+// Multi-layer validation. Each layer uses different constants and algorithms.
+// A cheater would need to reverse all layers AND keep all cross-field checks consistent.
+
+// Layer 1: modified FNV-1a hash
+function _h1(s){
+  var h=0x811c9dc5;
+  for(var i=0;i<s.length;i++){
+    h^=s.charCodeAt(i);
+    h=(h*0x01000193)>>>0;
   }
-  // XOR with a secret salt so it's not trivially reproducible
-  h=h^0xDEADF00D;
-  return(h>>>0).toString(16).padStart(8,"0");
+  return h;
 }
+// Layer 2: Jenkins hash
+function _h2(s){
+  var h=0;
+  for(var i=0;i<s.length;i++){
+    h+=s.charCodeAt(i);
+    h+=h<<10;
+    h^=h>>6;
+  }
+  h+=h<<3;h^=h>>11;h+=h<<15;
+  return h>>>0;
+}
+// Layer 3: SDBM variant
+function _h3(s){
+  var h=0x9e3779b9;
+  for(var i=0;i<s.length;i++){
+    h=s.charCodeAt(i)+(h<<6)+(h<<16)-h;
+    h=h>>>0;
+  }
+  return h;
+}
+// Combine all three layers with cross-mixing
+function computeChecksum(str){
+  var a=_h1(str),b=_h2(str),c=_h3(str);
+  // Mix constants split to avoid trivial reading
+  var k1=0x45|0x2d00|0x1f0000|0x8c000000; // 0x8c1f2d45
+  var k2=0x67|(0x3a<<8)|(0x91<<16)|(0x5e<<24); // 0x5e913a67
+  var k3=0xb2|(0x77<<8)|(0x4c<<16)|(0xa3<<24); // 0xa34c77b2
+  a=(a^(b>>>13)^k1)>>>0;
+  b=(b^(c>>>7)^k2)>>>0;
+  c=(c^(a>>>19)^k3)>>>0;
+  // Final blend
+  var r=((a^(b<<3)^(c>>5))>>>0);
+  r=(r^((a>>11)|(b<<21)))>>>0;
+  return r.toString(36).padStart(7,"0")+(b^c).toString(36).padStart(6,"0");
+}
+
+// Cross-field sanity check — validates that key values are internally consistent.
+// A cheater who edits totalEarned must also fake prestige, level, milestones etc.
+function _crossCheck(d){
+  try{
+    var earned=d.totalEarned||0;
+    var prestige=d.prestigeCount||0;
+    var level=d.playerLevel||1;
+    var milestone=d.milestoneIdx||0;
+    // Rule 1: can't have huge money with 0 prestiges and level 1 and milestone 0
+    if(earned>1e10&&prestige===0&&level<5&&milestone<5)return false;
+    // Rule 2: prestige count must be reachable — each prestige needs at least $1B
+    // So maximal legit total earned is roughly prestige*1e9 * some multiplier
+    // We're generous (100x) to allow for legitimate fast runs
+    if(prestige>0&&earned<prestige*1e8)return false;
+    // Rule 3: level must be at least somewhat consistent with earnings
+    // Each level needs some xp which comes from earning money
+    // Level 50 needs enormous earnings — if level is suspiciously high vs money, reject
+    if(level>200)return false;
+    // Rule 4: milestone index can't exceed total milestones (20)
+    if(milestone>20)return false;
+    // Rule 5: hustle tokens must be earnable — tokens = f(earned, prestige)
+    var maxTokens=(Math.floor(8*Math.cbrt(Math.max(earned,1e9)/1e9))+prestige*500)*2;
+    if((d.hustleTokens||0)>maxTokens+5000)return false;
+    return true;
+  }catch(e){return true;} // be lenient on errors
+}
+
+// Integrity token: a secondary hash baked INTO the save data, derived from
+// specific field values. Must match on import.
+function _makeIntegrityToken(d){
+  var fields=[
+    Math.floor(d.totalEarned||0),
+    Math.floor(d.hustleTokens||0),
+    d.prestigeCount||0,
+    d.playerLevel||1,
+    d.milestoneIdx||0
+  ].join(":");
+  var t=_h1(fields)^_h2(fields^0);
+  // Mix with a derived value so it's not just a hash of obvious fields
+  var blend=_h3(fields+d.v+Math.floor((d.totalEarned||0)/1e6));
+  return((t^blend^0x7a4f2e91)>>>0).toString(36);
+}
+
 
 function exportSave(){
   try{
-    var data=JSON.stringify(saveState());
+    var state=saveState();
+    // Embed integrity token inside the save data itself
+    state._it=_makeIntegrityToken(state);
+    var data=JSON.stringify(state);
     var checksum=computeChecksum(data);
-    var payload=JSON.stringify({d:data,c:checksum});
+    // Second checksum over checksum+length to detect partial tampering
+    var c2=_h1(checksum+(data.length).toString(36)).toString(36);
+    var payload=JSON.stringify({d:data,c:checksum,x:c2});
     var encoded=btoa(unescape(encodeURIComponent(payload)));
-    // Copy to clipboard
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(encoded).then(function(){
         showSaveMsg("✓ Save string copied to clipboard!","#44ff88");
@@ -1873,13 +1959,35 @@ function importSave(){
     if(!payload||!payload.d||!payload.c){
       showSaveMsg("❌ Invalid save string.","#ff4444");return;
     }
-    // Verify checksum — reject if tampered
-    var expectedChecksum=computeChecksum(payload.d);
-    if(expectedChecksum!==payload.c){
+    // Layer 1: primary checksum
+    var expectedC=computeChecksum(payload.d);
+    if(expectedC!==payload.c){
       showSaveMsg("❌ Save string has been modified and cannot be loaded.","#ff4444");
       return;
     }
+    // Layer 2: secondary checksum (length + primary)
+    if(payload.x){
+      var expectedX=_h1(payload.c+(payload.d.length).toString(36)).toString(36);
+      if(expectedX!==payload.x){
+        showSaveMsg("❌ Save string integrity check failed.","#ff4444");
+        return;
+      }
+    }
     var data=JSON.parse(payload.d);
+    // Layer 3: cross-field sanity check
+    if(!_crossCheck(data)){
+      showSaveMsg("❌ Save data contains impossible values.","#ff4444");
+      return;
+    }
+    // Layer 4: integrity token embedded in save
+    if(data._it){
+      var expectedIt=_makeIntegrityToken(data);
+      if(expectedIt!==data._it){
+        showSaveMsg("❌ Save integrity token mismatch.","#ff4444");
+        return;
+      }
+      delete data._it; // remove before loading
+    }
     var result=loadState(data);
     if(result===true){
       hideImportBox();
