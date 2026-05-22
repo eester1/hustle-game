@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v115</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v116</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -388,11 +388,19 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
   <div id="help-body">
 
     <div class="help-section">
-      <h3 style="color:#44ff88">💰 Making Money</h3>
-      <p>Tap the big <b>💰 HUSTLE</b> button to earn money manually. The amount shown below it is what each click earns right now.</p>
+      <h3 style="color:#44ff88">💰 Making Money</h3><p>Tap the big <b>💰 HUSTLE</b> button to earn money manually. The amount shown below it is what each click earns right now.</p>
       <p>Buy <b class="hl-yellow">Businesses</b> in the bottom-left panel — they earn money automatically over time. The progress bar shows when the next payout fires.</p>
       <p>Your <b class="hl-yellow">$/sec</b> in the top bar is purely from businesses. Clicking doesn't count toward it.</p>
       <div class="help-tip">💡 Early game: click a lot. Late game: businesses take over and clicking barely matters unless you stack click buffs.</div>
+    </div>
+
+    <div class="help-section">
+      <h3 style="color:#ffff44">🏢 Businesses</h3>
+      <p>Each business earns money automatically on a <b>cycle timer</b>. When the <b>cycle bar</b> at the bottom of a business fills up, it pays out and immediately restarts — there is <b>no pause between cycles</b>.</p>
+      <p>The bar <b>does not freeze</b> after a payout. What looks like a brief freeze is just the bar resetting to near-zero (the tiny leftover from the last cycle) and starting to fill again. This happens in a single frame — the restart is <b>instant</b>. Keep in mind the <b>visual bar may not always reflect what you are actually earning</b> — money is being added to your total even during that split-second reset, so the income is never interrupted even if the bar briefly looks like it stopped.</p>
+      <p>Key stats per business: <b>base cost</b> to buy, <b>base income</b> per cycle, and <b>cycle interval</b> in seconds. Owning more of the same business <b>multiplies the payout</b> — 10 Lemonade Stands pays 10x what one does.</p>
+      <p><b>Speed perks</b> (Speed Demon, Turbo Business) and <b>Speed Demon tree nodes</b> shorten the cycle interval, making businesses pay out more times per second. <b>Income perks</b> (Empire Builder, Double Down, Monopoly) multiply the payout amount without changing the speed.</p>
+      <div class="help-tip">💡 Buying upgrades specific to a business (e.g. Catchy Sign for Lemonade Stand) can multiply that business's income by 2–20x — often more valuable than buying more of the same business.</div>
     </div>
 
     <div class="help-section">
