@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v107</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v109</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1439,7 +1439,7 @@ function tickChainSpawn(dt){
   }
   if(pctEl) pctEl.textContent=chancePct+"%";
   if(chainTimerSecs<chainMinSecs)return;
-  var chancePerSec=spawnProgress*0.4;
+  var chancePerSec=spawnProgress*0.015;
   if(Math.random()<chancePerSec*dt){
     chainInProgress=true;
     chainStep=0;
@@ -1910,11 +1910,15 @@ function loop(){
   ctx.globalAlpha=1;
   // Update biz progress bars in-place each frame (cheap, no DOM rebuild)
   var bizBars=document.querySelectorAll(".biz-bar");
+  var barIdx=0;
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i];
-    if(b.owned>0&&bizBars[i]){
-      var spd=Math.min(10,Math.max(1,perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)));
-      bizBars[i].style.width=Math.min(100,(b.timer/(b.interval/spd))*100)+"%";
+    if(b.owned>0){
+      if(bizBars[barIdx]){
+        var spd=Math.min(10,Math.max(1,perkEffects.bizSpeedMult+(perkEffects.bizSpeedBonus||0)));
+        bizBars[barIdx].style.width=Math.min(100,(b.timer/(b.interval/spd))*100)+"%";
+      }
+      barIdx++;
     }
   }
   // Only rebuild full lists when something structural changed
