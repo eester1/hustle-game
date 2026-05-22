@@ -5,7 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { width: 100%; height: 100%; background: #0a0a0a; overflow: hidden; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #fff; }
-* { font-family: 'Segoe UI', system-ui, -apple-system, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif; }
+* { font-family: 'Segoe UI', system-ui, -apple-system, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif; user-select: none; -webkit-user-select: none; }
 canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: none; }
 #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; }
 #topbar { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: rgba(0,0,0,0.92); border-bottom: 1px solid #1a1a1a; gap: 8px; flex-shrink: 0; }
@@ -49,6 +49,8 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
 .chain-float-btn:hover { transform:scale(1.12); }
 .chain-float-btn:active { transform:scale(0.92); }
 .chain-float-btn.final { border-color:#ffcc44; box-shadow:0 0 16px #ffcc4470; animation:chainPulseFinal 0.8s ease-in-out infinite; }
+.chain-float-btn.done { opacity:0.3; pointer-events:none; animation:none; box-shadow:none; border-color:#1a3320; cursor:default; }
+#chain-svg { position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; }
 @keyframes chainPulse { 0%,100%{box-shadow:0 0 8px #44ff8860;} 50%{box-shadow:0 0 20px #44ff88cc;} }
 @keyframes chainPulseFinal { 0%,100%{box-shadow:0 0 10px #ffcc4470;} 50%{box-shadow:0 0 24px #ffcc44cc;} }
 #combo-display { font-size: 24px; font-weight: bold; color: #888; transition: all 0.1s; }
@@ -297,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v99</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v103</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -338,7 +340,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
   </div>
   <div id="active-effects"></div>
-  <div id="chain-overlay"></div>
+  <div id="chain-overlay"><svg id="chain-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
   <div id="toast-wrap"></div>
   <div id="bottom-panel">
     <div class="panel"><div class="panel-title"><span>Businesses</span></div><div id="biz-list"></div></div>
@@ -475,9 +477,9 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     <div class="help-section">
       <h3 style="color:#44ff88">💵 Money Chains</h3>
       <p><b class="hl-green">Money Chains</b> are a special bonus event that spawns on a rolling timer. Watch the <b>💵 Chain bar</b> in the top-left — it shows the current spawn chance. Every second, the game rolls that percentage chance to spawn a chain. So at 70%, there's a 70% chance it spawns that second. The longer you wait, the higher the chance gets until it eventually spawns.</p>
-      <p>Click it and a new button spawns at a different random spot. Click all <b>5 buttons</b> in time and the final <b>💰</b> gives a <b class="hl-yellow">big money payout</b> — 100x your current click value, scaled by your combo and prestige multiplier.</p>
+      <p>Click it and the next button appears at a random spot <b>on the same side</b>. All 5 buttons stay on the same side (left or right, chosen randomly each chain). Previously clicked buttons stay visible but faded out, and a dashed line connects them so you can see the path you have traveled. Click all <b>5 buttons</b> in time and the final <b>💰</b> gives a <b class="hl-yellow">big money payout</b> — 100x your current click value, scaled by your combo and prestige multiplier.</p>
       <p>You have <b>4 seconds</b> to click each button before the chain breaks and resets. Don't panic — just look around the screen quickly.</p>
-      <p>Money Chains are <b>always active</b> — no unlock needed. A hidden timer runs in the background. The bar starts filling immediately from zero. The chance starts very low and ramps up quickly — by 3 minutes a chain is near-guaranteed. Once one appears (complete or fail), the timer resets and the cycle starts over.</p>
+      <p>Money Chains are <b>always active</b> — no unlock needed. A hidden timer runs in the background. The bar fills at a constant speed from the moment the timer starts. By 3 minutes it reaches 100% and a chain is near-guaranteed to have spawned. Once one appears (complete or fail), the timer resets and the cycle starts over.</p>
       <div class="help-tip">💡 The chain only spawns when the game is open and running. Leaving it idle still builds up the timer.</div>
     </div>
 
@@ -1293,59 +1295,70 @@ var chainActive=true;  // always on from start
 var chainStep=0;
 var chainTimeoutId=null;
 var CHAIN_TIMEOUT=4000;
+var chainInProgress=false;
+var chainTimerSecs=0;
+var chainMinSecs=0;           // bar starts filling immediately
+var chainMaxSecs=180;         // near-guaranteed by 3 minutes
 var chainFloatBtn=null;
+var chainDoneBtns=[];
+var chainSide=null;
 
-function getChainZone(){
-  // Get mid-area bounds to know where to place chain buttons
+function getChainZone(side){
   var mid=document.getElementById("mid-area");
   var clickZone=document.getElementById("click-zone");
   if(!mid||!clickZone)return null;
   var midR=mid.getBoundingClientRect();
   var czR=clickZone.getBoundingClientRect();
-  // Use the LEFT empty space: from mid-area left edge to click zone left edge
-  // and RIGHT empty space: from click zone right edge to mid-area right edge
-  // Randomly pick left or right side each time
-  var side=Math.random()<0.5?"left":"right";
   var zone;
   if(side==="left"){
-    zone={x1:midR.left+30, x2:czR.left-60, y1:midR.top+30, y2:midR.bottom-30};
+    zone={x1:midR.left+30, x2:czR.left-55, y1:midR.top+25, y2:midR.bottom-25};
   } else {
-    zone={x1:czR.right+60, x2:midR.right-30, y1:midR.top+30, y2:midR.bottom-30};
+    zone={x1:czR.right+55, x2:midR.right-30, y1:midR.top+25, y2:midR.bottom-25};
   }
-  if(zone.x2-zone.x1<50) zone={x1:midR.left+20,x2:midR.left+200,y1:midR.top+30,y2:midR.bottom-30};
+  if(zone.x2-zone.x1<60) zone={x1:midR.left+20,x2:midR.left+220,y1:midR.top+25,y2:midR.bottom-25};
   return zone;
 }
 
+function drawChainLines(){
+  var svg=document.getElementById("chain-svg");
+  if(!svg)return;
+  while(svg.firstChild)svg.removeChild(svg.firstChild);
+  var points=chainDoneBtns.map(function(d){return {x:d.cx,y:d.cy};});
+  if(chainFloatBtn){
+    var r=chainFloatBtn.getBoundingClientRect();
+    points.push({x:r.left+r.width/2, y:r.top+r.height/2});
+  }
+  for(var i=0;i<points.length-1;i++){
+    var line=document.createElementNS("http://www.w3.org/2000/svg","line");
+    line.setAttribute("x1",points[i].x);line.setAttribute("y1",points[i].y);
+    line.setAttribute("x2",points[i+1].x);line.setAttribute("y2",points[i+1].y);
+    line.setAttribute("stroke","#44ff8840");line.setAttribute("stroke-width","2");
+    line.setAttribute("stroke-dasharray","6 4");
+    svg.appendChild(line);
+  }
+}
+
 function spawnChainBtn(){
-  // Remove old button if any
-  if(chainFloatBtn){chainFloatBtn.remove();chainFloatBtn=null;}
   var overlay=document.getElementById("chain-overlay");
   if(!overlay||!chainActive)return;
-
-  var zone=getChainZone();
+  if(chainStep===0) chainSide=Math.random()<0.5?"left":"right";
+  var zone=getChainZone(chainSide);
   if(!zone)return;
-
   var isFinal=(chainStep===4);
   var btn=document.createElement("div");
   btn.className="chain-float-btn"+(isFinal?" final":"");
   btn.textContent=isFinal?"💰":"💵";
   btn.title="Chain "+(chainStep+1)+"/5";
-
-  // Random position within zone, avoid edges
-  var x=zone.x1+Math.random()*(zone.x2-zone.x1);
-  var y=zone.y1+Math.random()*(zone.y2-zone.y1);
-  btn.style.left=(x-23)+"px";
-  btn.style.top=(y-23)+"px";
-
+  var x=zone.x1+23+Math.random()*Math.max(0,zone.x2-zone.x1-46);
+  var y=zone.y1+23+Math.random()*Math.max(0,zone.y2-zone.y1-46);
+  btn.style.left=(x-23)+"px";btn.style.top=(y-23)+"px";
   btn.addEventListener("click",function(){
     btn.style.transform="scale(0.85)";
-    setTimeout(function(){handleChainClick();},80);
+    setTimeout(function(){handleChainClick(btn,x,y);},80);
   });
-
   overlay.appendChild(btn);
   chainFloatBtn=btn;
-
-  // Timeout to reset if too slow
+  drawChainLines();
   if(chainTimeoutId){clearTimeout(chainTimeoutId);}
   chainTimeoutId=setTimeout(function(){
     toast("⛓️ Chain broken! Too slow.","#ff4444");
@@ -1353,53 +1366,59 @@ function spawnChainBtn(){
   },CHAIN_TIMEOUT);
 }
 
-function handleChainClick(){
+function handleChainClick(btn,cx,cy){
   if(!chainActive)return;
   if(chainTimeoutId){clearTimeout(chainTimeoutId);chainTimeoutId=null;}
-
+  btn.className="chain-float-btn done";
+  chainDoneBtns.push({el:btn,cx:cx,cy:cy});
+  chainFloatBtn=null;
   chainStep++;
-
   if(chainStep>=5){
-    // Chain complete!
-    if(chainFloatBtn){chainFloatBtn.remove();chainFloatBtn=null;}
     var payout=clickValue*clickMult*combo*(1+globalIncomeBonus)*prestigeMult*100;
     addMoney(payout);
-    var cx=window.innerWidth*0.35, cy=window.innerHeight*0.45;
-    spawnRainbowBurst(cx,cy,14);
-    floaties.push({x:cx,y:cy-30,vy:-2.5,life:1.4,text:"⛓️ CHAIN! +"+fmt(payout),color:"#ffcc44",sz:13});
+    var cx2=window.innerWidth*(chainSide==="left"?0.25:0.75);
+    var cy2=window.innerHeight*0.45;
+    spawnRainbowBurst(cx2,cy2,14);
+    floaties.push({x:cx2,y:cy2-30,vy:-2.5,life:1.4,text:"⛓️ CHAIN! +"+fmt(payout),color:"#ffcc44",sz:13});
     toast("⛓️ Chain complete! +"+fmt(payout),"#ffcc44");
-    chainInProgress=false;
-    chainStep=0;
-    chainTimerSecs=0; // restart the ramp timer
+    setTimeout(function(){
+      clearChainOverlay();
+      chainInProgress=false;chainStep=0;chainTimerSecs=0;
+    },1200);
   } else {
-    // Spawn next button at a new random position
+    drawChainLines();
     spawnChainBtn();
   }
 }
 
-// Chain spawns on a time-based ramping chance — like golden cookies from Cookie Clicker
-// Chance starts very low and ramps up over 3-8 minutes until it's near-guaranteed
-var chainTimerSecs=0;         // seconds since last chain (or since unlock)
-var chainMinSecs=0;           // bar starts filling immediately
-var chainMaxSecs=180;         // near-guaranteed by 3 minutes
-var chainInProgress=false;
+function clearChainOverlay(){
+  chainDoneBtns.forEach(function(d){if(d.el&&d.el.parentNode)d.el.parentNode.removeChild(d.el);});
+  chainDoneBtns=[];
+  if(chainFloatBtn){chainFloatBtn.remove();chainFloatBtn=null;}
+  var svg=document.getElementById("chain-svg");
+  if(svg)while(svg.firstChild)svg.removeChild(svg.firstChild);
+  chainSide=null;
+}
 
+function initChain(){
+  chainActive=true;chainInProgress=false;chainTimerSecs=0;
+}
+
+function resetChain(){
+  chainStep=0;chainInProgress=false;chainTimerSecs=0;
+  if(chainTimeoutId){clearTimeout(chainTimeoutId);chainTimeoutId=null;}
+  clearChainOverlay();
+}
+
+// Chain spawn timer — called every frame from game loop
 function tickChainSpawn(dt){
   if(!chainActive)return;
-
-  // Update bar visibility
   var wrap=document.getElementById("chain-timer-wrap");
   if(wrap) wrap.style.display=chainInProgress?"none":"block";
-
   if(chainInProgress)return;
   chainTimerSecs+=dt;
-
-  // Progress from 0 to 1 over chainMaxSecs — starts immediately
   var spawnProgress=Math.min(1, chainTimerSecs/chainMaxSecs);
-  // Cubic ramp — very low early, accelerates heavily near the end
-  var chancePct=Math.round(spawnProgress*spawnProgress*spawnProgress*100);
-
-  // Bar width matches the spawn chance percentage — both 0% until 3 min, then ramp together
+  var chancePct=Math.round(spawnProgress*100);
   var barEl=document.getElementById("chain-timer-bar");
   var pctEl=document.getElementById("chain-timer-pct");
   if(barEl){
@@ -1407,10 +1426,8 @@ function tickChainSpawn(dt){
     barEl.style.background=chancePct>60?"#ff8844":chancePct>25?"#ffcc44":"#44ff88";
   }
   if(pctEl) pctEl.textContent=chancePct+"%";
-
   if(chainTimerSecs<chainMinSecs)return;
-
-  var chancePerSec=spawnProgress*spawnProgress*spawnProgress*0.4;
+  var chancePerSec=spawnProgress*0.4;
   if(Math.random()<chancePerSec*dt){
     chainInProgress=true;
     chainStep=0;
@@ -1420,19 +1437,7 @@ function tickChainSpawn(dt){
   }
 }
 
-function initChain(){
-  chainActive=true;
-  chainInProgress=false;
-  chainTimerSecs=0;
-}
 
-function resetChain(){
-  chainStep=0;
-  chainInProgress=false;
-  chainTimerSecs=0; // reset — player must wait again
-  if(chainTimeoutId){clearTimeout(chainTimeoutId);chainTimeoutId=null;}
-  if(chainFloatBtn){chainFloatBtn.remove();chainFloatBtn=null;}
-}
 
 function reqsMet(node){
   for(var i=0;i<node.req.length;i++) if(!treeNodes[node.req[i]].bought) return false;
