@@ -135,6 +135,28 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
 #save-box h2 { font-size: 16px; color: #44ff88; margin-bottom: 16px; }
 .save-name-input { background:#0a0a0a; border:1px solid #333; color:#fff; padding:3px 7px; border-radius:4px; font-size:11px; font-family:inherit; width:120px; }
 .save-name-input:focus { outline:none; border-color:#44aaff; }
+/* Admin panel */
+#admin-modal { position:fixed;inset:0;background:rgba(0,0,0,0.98);z-index:99998;display:none;flex-direction:column; }
+#admin-modal.open { display:flex; }
+#admin-header { display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#0a0a0a;border-bottom:1px solid #ff444430;flex-shrink:0; }
+#admin-header h2 { font-size:14px;color:#ff4444;margin:0; }
+#admin-body { flex:1;overflow:auto;padding:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start; }
+.admin-panel { background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;padding:14px;min-width:280px;flex:1; }
+.admin-panel h3 { font-size:12px;color:#ff4444;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px; }
+.admin-entry { background:#111;border-radius:5px;padding:8px 10px;margin-bottom:6px;font-size:11px;color:#aaa;position:relative; }
+.admin-entry .admin-meta { font-size:10px;color:#444;margin-top:3px; }
+.admin-del { position:absolute;top:6px;right:6px;background:none;border:none;color:#ff4444;cursor:pointer;font-size:11px;padding:2px 5px; }
+.admin-del:hover { color:#ff8888; }
+#admin-broadcast-input { width:100%;background:#0a0a0a;border:1px solid #333;color:#fff;padding:6px 8px;border-radius:4px;font-size:11px;font-family:inherit;margin-bottom:6px; }
+#admin-broadcast-input:focus { outline:none;border-color:#ff4444; }
+#admin-msg { font-size:11px;color:#44ff88;min-height:16px;margin-top:6px; }
+#admin-login { position:fixed;inset:0;background:rgba(0,0,0,0.98);z-index:100000;display:none;align-items:center;justify-content:center; }
+#admin-login.open { display:flex; }
+#admin-login-box { background:#0d0d0d;border:1px solid #ff444430;border-radius:10px;padding:24px;width:300px;text-align:center; }
+#admin-login-box h3 { color:#ff4444;font-size:14px;margin-bottom:14px; }
+#admin-pwd-input { width:100%;background:#0a0a0a;border:1px solid #333;color:#fff;padding:8px;border-radius:4px;font-size:13px;font-family:inherit;text-align:center;letter-spacing:2px;margin-bottom:10px; }
+#admin-pwd-input:focus { outline:none;border-color:#ff4444; }
+#admin-login-msg { font-size:11px;min-height:16px;color:#ff4444; }
 /* Leaderboard */
 #lb-modal { position:fixed;inset:0;background:rgba(0,0,0,0.97);z-index:10003;display:none;flex-direction:column;align-items:center;justify-content:center; }
 #lb-modal.open { display:flex; }
@@ -537,6 +559,51 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="lb-status"></div>
     <button id="lb-close-btn" onclick="closeLeaderboard()">✕ Close</button>
+  </div>
+</div>
+
+<!-- Admin login -->
+<div id="admin-login">
+  <div id="admin-login-box">
+    <h3>🔐 Admin Access</h3>
+    <input id="admin-pwd-input" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')checkAdminPwd()" />
+    <div style="display:flex;gap:8px;">
+      <button class="save-action-btn red" style="flex:1;padding:7px;" onclick="checkAdminPwd()">Enter</button>
+      <button class="save-action-btn" style="flex:1;padding:7px;" onclick="closeAdminLogin()">Cancel</button>
+    </div>
+    <div id="admin-login-msg"></div>
+  </div>
+</div>
+
+<!-- Admin panel -->
+<div id="admin-modal">
+  <div id="admin-header">
+    <h2>🔐 Admin Panel — Hustle Simulator</h2>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div id="admin-msg"></div>
+      <button class="save-action-btn" onclick="adminRefresh()" style="font-size:11px;">🔄 Refresh</button>
+      <button class="save-action-btn red" onclick="closeAdmin()" style="font-size:11px;">✕ Close</button>
+    </div>
+  </div>
+  <div id="admin-body">
+    <div class="admin-panel">
+      <h3>📊 Live Stats</h3>
+      <div id="admin-stats" style="font-size:11px;color:#666;">Loading...</div>
+    </div>
+    <div class="admin-panel">
+      <h3>🏆 Leaderboard</h3>
+      <div id="admin-lb-list">Loading...</div>
+    </div>
+    <div class="admin-panel">
+      <h3>💬 Feedback</h3>
+      <div id="admin-feedback-list">Loading...</div>
+    </div>
+    <div class="admin-panel">
+      <h3>📣 Broadcast Message</h3>
+      <div style="font-size:11px;color:#555;margin-bottom:8px;">Shows as a toast to all players within 30 seconds.</div>
+      <input id="admin-broadcast-input" type="text" maxlength="80" placeholder="Type a message to all players..." />
+      <button class="save-action-btn green" style="width:100%;padding:7px;" onclick="adminBroadcast()">Send to All Players</button>
+    </div>
   </div>
 </div>
 
@@ -2596,7 +2663,174 @@ var autosaveInterval=setInterval(function(){
   }
 })();
 
-renderAll();updateUI();loop();
+// ── ADMIN PANEL ──
+// Password is checked against an obfuscated hash — never stored in plain text
+var _ADMIN_HASH=(function(){
+  // Hash constants split to avoid trivial reading
+  var k1=0x4a|0x3f00|0x8c0000|0x1d000000;
+  var k2=0x91|(0x5e<<8)|(0x2a<<16)|(0x77<<24);
+  var k3=0xc3|(0x44<<8)|(0x8b<<16)|(0x1f<<24);
+  return {k1:k1,k2:k2,k3:k3,expected:"01p62400-m9lymz"};
+})();
+
+function _adminHash(pwd){
+  var a=_h1(pwd),b=_h2(pwd),c=_h3(pwd);
+  a=(a^(b>>>11)^_ADMIN_HASH.k1)>>>0;
+  b=(b^(c>>>7) ^_ADMIN_HASH.k2)>>>0;
+  c=(c^(a>>>13)^_ADMIN_HASH.k3)>>>0;
+  var r=((a^(b<<5)^(c>>3))>>>0);
+  r=(r^((a>>9)|(b<<23)))>>>0;
+  return r.toString(36).padStart(8,"0")+(b^c).toString(36).padStart(7,"0");
+}
+
+var adminAuthed=false;
+
+// Secret key combo: press Ctrl+Shift+A to open admin login
+document.addEventListener("keydown",function(e){
+  if(e.ctrlKey&&e.shiftKey&&e.key==="A"){
+    e.preventDefault();
+    openAdminLogin();
+  }
+});
+
+function openAdminLogin(){
+  document.getElementById("admin-login").className="open";
+  document.getElementById("admin-pwd-input").value="";
+  document.getElementById("admin-login-msg").textContent="";
+  setTimeout(function(){document.getElementById("admin-pwd-input").focus();},100);
+}
+function closeAdminLogin(){
+  document.getElementById("admin-login").className="";
+}
+function checkAdminPwd(){
+  var input=document.getElementById("admin-pwd-input").value;
+  if(_adminHash(input)===_ADMIN_HASH.expected){
+    adminAuthed=true;
+    closeAdminLogin();
+    openAdmin();
+  } else {
+    document.getElementById("admin-login-msg").textContent="Incorrect password.";
+    document.getElementById("admin-pwd-input").value="";
+  }
+}
+
+function openAdmin(){
+  if(!adminAuthed){openAdminLogin();return;}
+  document.getElementById("admin-modal").className="open";
+  adminRefresh();
+}
+function closeAdmin(){
+  document.getElementById("admin-modal").className="";
+}
+
+function adminMsg(msg,color){
+  var el=document.getElementById("admin-msg");
+  el.textContent=msg;el.style.color=color||"#44ff88";
+  setTimeout(function(){if(el.textContent===msg)el.textContent="";},3000);
+}
+
+async function adminRefresh(){
+  adminMsg("Loading...","#555");
+  try{
+    // Load leaderboard + presence
+    var lbResp=await fetch(LB_URL);
+    var lbData=lbResp.ok?await lbResp.json():{scores:[],presence:{}};
+    var scores=lbData.scores||[];
+    var presence=lbData.presence||{};
+    var now=Date.now();
+    var activeSessions=Object.values(presence).filter(function(p){return now-(p.ts||0)<90000;}).length;
+
+    // Stats
+    document.getElementById("admin-stats").innerHTML=
+      '<div style="color:#aaa">🟢 Active sessions: <b style="color:#44ff88">'+activeSessions+'</b></div>'+
+      '<div style="color:#aaa;margin-top:4px">🏆 Leaderboard entries: <b style="color:#ffcc44">'+scores.length+'</b></div>'+
+      '<div style="color:#aaa;margin-top:4px">📋 Version: <b style="color:#44aaff">v78</b></div>';
+
+    // Leaderboard with delete + fingerprint
+    var lbHtml="";
+    scores.sort(function(a,b){return b.score-a.score;});
+    if(scores.length===0) lbHtml='<div style="color:#444;font-size:11px;">No entries yet.</div>';
+    scores.forEach(function(e,i){
+      var age=e.ts?Math.floor((now-e.ts)/60000)+"m ago":"?";
+      lbHtml+='<div class="admin-entry">'
+        +'<b style="color:#ffcc44">#'+(i+1)+' '+escHtml(e.name)+'</b> — '+fmtSave(e.score)
+        +'<button class="admin-del" onclick="adminDeleteLbEntry(\''+escHtml(e.name)+'\')">✕</button>'
+        +'<div class="admin-meta">Updated: '+age+'</div>'
+        +'</div>';
+    });
+    document.getElementById("admin-lb-list").innerHTML=lbHtml;
+
+    // Feedback
+    var fbResp=await fetch(FEEDBACK_URL);
+    var fbData=fbResp.ok?await fbResp.json():{feedback:[]};
+    var feedback=fbData.feedback||[];
+    var fbHtml="";
+    if(feedback.length===0) fbHtml='<div style="color:#444;font-size:11px;">No feedback yet.</div>';
+    feedback.slice().reverse().forEach(function(f,i){
+      var idx=feedback.length-1-i;
+      var date=f.ts?new Date(f.ts).toLocaleString():"?";
+      fbHtml+='<div class="admin-entry">'
+        +escHtml(f.text)
+        +'<button class="admin-del" onclick="adminDeleteFeedback('+idx+')">✕</button>'
+        +'<div class="admin-meta">Lv'+f.level+' | Prestige '+f.prestige+' | '+date+'<br>fp: '+(f.fp||"unknown")+'</div>'
+        +'</div>';
+    });
+    document.getElementById("admin-feedback-list").innerHTML=fbHtml;
+
+    adminMsg("Refreshed ✓","#44ff88");
+  }catch(e){
+    adminMsg("Load failed: "+e.message,"#ff4444");
+  }
+}
+
+async function adminDeleteLbEntry(name){
+  if(!confirm("Remove '"+name+"' from leaderboard?"))return;
+  var ok=await removeScore(name);
+  if(ok){adminMsg("Removed '"+name+"'","#44ff88");adminRefresh();}
+  else adminMsg("Failed to remove","#ff4444");
+}
+
+async function adminDeleteFeedback(idx){
+  if(!confirm("Delete this feedback entry?"))return;
+  try{
+    var resp=await fetch(FEEDBACK_URL);
+    var data=await resp.json();
+    var entries=data.feedback||[];
+    entries.splice(idx,1);
+    await fetch(FEEDBACK_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({feedback:entries})});
+    adminMsg("Deleted ✓","#44ff88");
+    adminRefresh();
+  }catch(e){adminMsg("Failed","#ff4444");}
+}
+
+// Broadcast: store message in lb bin, presence ping picks it up
+async function adminBroadcast(){
+  var msg=document.getElementById("admin-broadcast-input").value.trim();
+  if(!msg){adminMsg("Type a message first","#ff4444");return;}
+  try{
+    var resp=await fetch(LB_URL);
+    var data=await resp.json();
+    data.broadcast={msg:msg,ts:Date.now()};
+    await fetch(LB_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+    document.getElementById("admin-broadcast-input").value="";
+    adminMsg("Broadcast sent! Players will see it within 30s.","#44ff88");
+  }catch(e){adminMsg("Failed to broadcast","#ff4444");}
+}
+
+// Check for broadcast messages in presence ping
+var _lastBroadcastTs=0;
+var _origPresencePing=presencePing;
+presencePing=async function(){
+  await _origPresencePing();
+  try{
+    var resp=await fetch(LB_URL);
+    var data=await resp.json();
+    if(data.broadcast&&data.broadcast.ts>_lastBroadcastTs&&data.broadcast.ts>Date.now()-120000){
+      _lastBroadcastTs=data.broadcast.ts;
+      toast("📣 "+data.broadcast.msg,"#ffcc44");
+    }
+  }catch(e){}
+};
 
 // On startup, silently remove any entry whose name matches our stored link name
 // but ONLY if we no longer have a valid linked slot (i.e. after a wipe)
@@ -2632,6 +2866,13 @@ renderAll();updateUI();loop();
     }catch(e){}
   },3000); // wait 3s after load so it doesn't slow down startup
 })();
+
+function openSave(){ document.getElementById("save-modal").className="open"; renderSaveSlots(); }
+function closeSave(){ document.getElementById("save-modal").className=""; }
+function openHelp(){ document.getElementById("help-modal").className="open"; }
+function closeHelp(){ document.getElementById("help-modal").className=""; }
+
+renderAll();updateUI();loop();
 </script>
 </body>
 </html>
