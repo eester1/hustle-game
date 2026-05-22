@@ -297,7 +297,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v94</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v96</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -477,7 +477,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
       <p><b class="hl-green">Money Chains</b> are a rare bonus event that appears while you click. After enough clicks, a glowing <b>💵</b> button will randomly appear in the empty space on screen — this is the start of a chain.</p>
       <p>Click it and a new button spawns at a different random spot. Click all <b>5 buttons</b> in time and the final <b>💰</b> gives a <b class="hl-yellow">big money payout</b> — 100x your current click value, scaled by your combo and prestige multiplier.</p>
       <p>You have <b>4 seconds</b> to click each button before the chain breaks and resets. Don't panic — just look around the screen quickly.</p>
-      <p>Money Chains are <b>always active</b> — no unlock needed. A hidden timer runs in the background. For the first 3 minutes nothing happens, then the chance to spawn starts climbing. By 8 minutes a chain is near-guaranteed. Once one appears (complete or fail), the timer resets and the cycle starts over.</p>
+      <p>Money Chains are <b>always active</b> — no unlock needed. A hidden timer runs in the background. For the first minute nothing happens, then the chance starts climbing. By 3 minutes a chain is near-guaranteed. Once one appears (complete or fail), the timer resets and the cycle starts over.</p>
       <div class="help-tip">💡 The chain only spawns when the game is open and running. Leaving it idle still builds up the timer.</div>
     </div>
 
@@ -1380,8 +1380,8 @@ function handleChainClick(){
 // Chain spawns on a time-based ramping chance — like golden cookies from Cookie Clicker
 // Chance starts very low and ramps up over 3-8 minutes until it's near-guaranteed
 var chainTimerSecs=0;         // seconds since last chain (or since unlock)
-var chainMinSecs=180;         // minimum 3 minutes before any chance
-var chainMaxSecs=480;         // by 8 minutes it's essentially guaranteed
+var chainMinSecs=60;          // chance starts building after 1 minute
+var chainMaxSecs=180;         // near-guaranteed by 3 minutes
 var chainInProgress=false;
 
 function tickChainSpawn(dt){
@@ -1394,18 +1394,16 @@ function tickChainSpawn(dt){
   if(chainInProgress)return;
   chainTimerSecs+=dt;
 
-  // Calculate progress and spawn chance
-  var rawProgress=chainTimerSecs/chainMaxSecs; // 0 to 1 over full 8 min
+  // Calculate spawn chance progress (only starts after 3 min minimum)
   var spawnProgress=Math.max(0,(chainTimerSecs-chainMinSecs)/Math.max(1,chainMaxSecs-chainMinSecs));
   spawnProgress=Math.min(1,spawnProgress);
   var chancePct=Math.round(spawnProgress*spawnProgress*100);
 
-  // Update bar — bar fills over full 8 min, color shifts green→yellow→orange as chance rises
-  var barPct=Math.min(100,rawProgress*100);
+  // Bar width matches the spawn chance percentage — both 0% until 3 min, then ramp together
   var barEl=document.getElementById("chain-timer-bar");
   var pctEl=document.getElementById("chain-timer-pct");
   if(barEl){
-    barEl.style.width=barPct+"%";
+    barEl.style.width=chancePct+"%";
     barEl.style.background=chancePct>60?"#ff8844":chancePct>25?"#ffcc44":"#44ff88";
   }
   if(pctEl) pctEl.textContent=chancePct+"%";
