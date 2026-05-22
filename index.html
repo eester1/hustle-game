@@ -111,6 +111,16 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
 #save-btn:hover { background: #1a1a1a; border-color: #44ff88; }
 #lb-btn { background: #111; border: 1px solid #333; color: #888; width: 24px; height: 24px; border-radius: 4px; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
 #lb-btn:hover { background: #1a1a1a; border-color: #ffcc44; }
+#feedback-btn { background: #111; border: 1px solid #333; color: #888; width: 24px; height: 24px; border-radius: 4px; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; }
+#feedback-btn:hover { background: #1a1a1a; border-color: #44aaff; }
+#feedback-modal { position:fixed;inset:0;background:rgba(0,0,0,0.97);z-index:10004;display:none;flex-direction:column;align-items:center;justify-content:center; }
+#feedback-modal.open { display:flex; }
+#feedback-box { background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;padding:22px 26px;width:420px;max-width:96vw; }
+#feedback-box h2 { font-size:15px;color:#44aaff;margin-bottom:6px; }
+#feedback-box p { font-size:11px;color:#555;margin-bottom:12px; }
+#feedback-text { width:100%;height:100px;background:#0a0a0a;border:1px solid #333;color:#aaa;padding:8px;border-radius:5px;font-size:12px;font-family:inherit;resize:vertical; }
+#feedback-text:focus { outline:none;border-color:#44aaff; }
+#feedback-msg { font-size:11px;min-height:16px;margin-top:6px;color:#44ff88; }
 #save-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 10002; display: none; flex-direction: column; align-items: center; justify-content: center; }
 #save-modal.open { display: flex; }
 #save-box { background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 10px; padding: 20px 24px; width: 480px; max-width: 96vw; max-height: 90vh; overflow-y: auto; }
@@ -242,6 +252,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
         <div id="level-display">Level 1 Hustler</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
+        <button id="feedback-btn" onclick="openFeedback()" title="Send Feedback">💬</button>
         <div id="help-btn" onclick="openHelp()" title="Help">?</div>
       </div>
       <div id="xp-bar-wrap"><div id="xp-bar"></div></div>
@@ -460,6 +471,20 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
 
   </div>
 </div>
+<!-- Feedback modal -->
+<div id="feedback-modal">
+  <div id="feedback-box">
+    <h2>💬 Send Feedback</h2>
+    <p>Got a suggestion or found a bug? The developer will see your message.</p>
+    <textarea id="feedback-text" placeholder="Type your feedback here..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="save-action-btn green" style="flex:1;padding:7px;" onclick="submitFeedback()">Send</button>
+      <button class="save-action-btn" style="flex:1;padding:7px;" onclick="closeFeedback()">Cancel</button>
+    </div>
+    <div id="feedback-msg"></div>
+  </div>
+</div>
+
 <!-- Leaderboard modal -->
 <div id="lb-modal">
   <div id="lb-box">
@@ -489,7 +514,7 @@ if(W<100)W=800;if(H<100)H=600;
 c.width=W;c.height=H;
 
 var money=0,totalEarned=0,perSec=0,clickValue=1;
-var xp=0,xpNeeded=100,playerLevel=1;
+var xp=0,xpNeeded=500,playerLevel=1;
 var combo=1,comboTimer=0,comboMax=3.5;
 // Combo gain reduced — needs ~25 clicks to reach max vs instant before
 var COMBO_GAIN_BASE = 0.10;
@@ -521,28 +546,49 @@ var consumableTierUnlocked=0; // 0=locked, 1=tier1 usable, 2=tier1+2, etc.
 var perkEffects={comboCap:8,comboTimerMult:1,luckyBoost:1,rainbowMult:1,costReduce:1,basePassive:0,bizSpeedMult:1};
 var cdReduceMult=1;
 
-var levels=["Hustler","Street Vendor","Freelancer","Side Hustler","Entrepreneur","Angel Investor","CEO","Tycoon","Mogul","Billionaire","Trillionaire","Quadrillionaire","God of Money"];
+var levels=[
+  "Button Pusher",      // 1
+  "Finger Tapper",      // 2
+  "Click Apprentice",   // 3
+  "Click Rookie",       // 4
+  "Click Enthusiast",   // 5
+  "Speed Clicker",      // 6
+  "Click Addict",       // 7
+  "Click Pro",          // 8
+  "Click Expert",       // 9
+  "Click Veteran",      // 10
+  "Click Specialist",   // 11
+  "Click Elite",        // 12
+  "Click Champion",     // 13
+  "Click Master",       // 14
+  "Click Legend",       // 15
+  "Click Deity",        // 16
+  "Click Overlord",     // 17
+  "Click God",          // 18
+  "Click Universe",     // 19
+  "The One Who Clicks", // 20
+];
 var milestones=[100,500,2000,10000,50000,200000,1e6,5e6,2e7,1e8,5e8,1e9,1e10,1e12,1e15,1e18,1e21,1e24,1e27,1e30];
 var milestoneIdx=0;
 var suffixes=["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){if(n<0)return"-"+fmt(-n);if(n<1000)return"$"+n.toFixed(2);for(var i=suffixes.length-1;i>=1;i--){var v=Math.pow(1000,i);if(n>=v)return"$"+(n/v).toFixed(2)+suffixes[i];}return"$"+n.toFixed(2);}
 
 var businesses=[
-  {name:"Lemonade Stand",icon:"🍋",baseCost:15,baseIncome:0.1,owned:0,timer:0,interval:3,mult:1,color:"#ffff44"},
-  {name:"Car Wash",icon:"🚗",baseCost:80,baseIncome:0.5,owned:0,timer:0,interval:5,mult:1,color:"#44aaff"},
-  {name:"Food Truck",icon:"🌮",baseCost:300,baseIncome:2,owned:0,timer:0,interval:6,mult:1,color:"#ff8844"},
-  {name:"Laundromat",icon:"👕",baseCost:800,baseIncome:6,owned:0,timer:0,interval:7,mult:1,color:"#aa44ff"},
-  {name:"Barbershop",icon:"✂️",baseCost:2500,baseIncome:18,owned:0,timer:0,interval:8,mult:1,color:"#ff4488"},
-  {name:"Coffee Shop",icon:"☕",baseCost:8000,baseIncome:55,owned:0,timer:0,interval:9,mult:1,color:"#cc8844"},
-  {name:"Gym",icon:"💪",baseCost:25000,baseIncome:160,owned:0,timer:0,interval:10,mult:1,color:"#44ff88"},
-  {name:"Restaurant",icon:"🍽️",baseCost:80000,baseIncome:480,owned:0,timer:0,interval:12,mult:1,color:"#ff6644"},
-  {name:"Hotel",icon:"🏨",baseCost:250000,baseIncome:1400,owned:0,timer:0,interval:14,mult:1,color:"#44ffcc"},
-  {name:"Tech Startup",icon:"💻",baseCost:1e6,baseIncome:5000,owned:0,timer:0,interval:16,mult:1,color:"#8888ff"},
-  {name:"Hedge Fund",icon:"📈",baseCost:5e6,baseIncome:25000,owned:0,timer:0,interval:18,mult:1,color:"#44ff44"},
-  {name:"Casino",icon:"🎰",baseCost:2e7,baseIncome:120000,owned:0,timer:0,interval:20,mult:1,color:"#ffaa00"},
-  {name:"Oil Empire",icon:"🛢️",baseCost:1e8,baseIncome:600000,owned:0,timer:0,interval:22,mult:1,color:"#886644"},
-  {name:"Space Agency",icon:"🚀",baseCost:5e8,baseIncome:3e6,owned:0,timer:0,interval:25,mult:1,color:"#4488ff"},
-  {name:"Quantum Bank",icon:"🏦",baseCost:5e9,baseIncome:2e7,owned:0,timer:0,interval:28,mult:1,color:"#ff44ff"}
+  {name:"Lemonade Stand",icon:"🍋",baseCost:15,   baseIncome:0.25,  owned:0,timer:0,interval:3, mult:1,color:"#ffff44"},
+  {name:"Car Wash",      icon:"🚗",baseCost:80,   baseIncome:1.5,   owned:0,timer:0,interval:5, mult:1,color:"#44aaff"},
+  {name:"Food Truck",    icon:"🌮",baseCost:300,  baseIncome:6,     owned:0,timer:0,interval:6, mult:1,color:"#ff8844"},
+  {name:"Laundromat",    icon:"👕",baseCost:800,  baseIncome:18,    owned:0,timer:0,interval:7, mult:1,color:"#aa44ff"},
+  {name:"Barbershop",    icon:"✂️",baseCost:2500, baseIncome:55,    owned:0,timer:0,interval:8, mult:1,color:"#ff4488"},
+  {name:"Coffee Shop",   icon:"☕",baseCost:8000, baseIncome:160,   owned:0,timer:0,interval:9, mult:1,color:"#cc8844"},
+  {name:"Gym",           icon:"💪",baseCost:25000,baseIncome:480,   owned:0,timer:0,interval:10,mult:1,color:"#44ff88"},
+  {name:"Restaurant",    icon:"🍽️",baseCost:80000,baseIncome:1400,  owned:0,timer:0,interval:12,mult:1,color:"#ff6644"},
+  {name:"Hotel",         icon:"🏨",baseCost:250000,baseIncome:4500, owned:0,timer:0,interval:14,mult:1,color:"#44ffcc"},
+  {name:"Tech Startup",  icon:"💻",baseCost:1e6,  baseIncome:16000, owned:0,timer:0,interval:16,mult:1,color:"#8888ff"},
+  {name:"Hedge Fund",    icon:"📈",baseCost:5e6,  baseIncome:80000, owned:0,timer:0,interval:20,mult:1,color:"#44ff88"},
+  {name:"Casino",        icon:"🎰",baseCost:2e7,  baseIncome:400000,owned:0,timer:0,interval:25,mult:1,color:"#ffcc44"},
+  {name:"Oil Empire",    icon:"⛽",baseCost:1e8,  baseIncome:2e6,   owned:0,timer:0,interval:30,mult:1,color:"#888888"},
+  {name:"Space Corp",    icon:"🚀",baseCost:5e8,  baseIncome:1.2e7, owned:0,timer:0,interval:40,mult:1,color:"#4488ff"},
+  {name:"Quantum Bank",  icon:"🏦",baseCost:5e9,  baseIncome:8e7,   owned:0,timer:0,interval:55,mult:1,color:"#ff44ff"},
 ];
 
 var upgrades=[
@@ -602,8 +648,6 @@ var consumables=[
 ];
 
 var perks=[
-  // req:-1 = always available. req:N = tree node id N must be bought first.
-  // Only God Mode and Click Master are multipliers — everything else is a percentage bonus.
   {name:"Quick Fingers",      desc:"Clicks earn +25%",                    cost:500,    owned:false,type:"clickpct",      val:0.25, req:-1},
   {name:"Passive Income",     desc:"+$10/sec passive income",              cost:800,    owned:false,type:"baseincome",    val:10,   req:-1},
   {name:"Bulk Buyer",         desc:"Businesses cost 10% less",             cost:1200,   owned:false,type:"costreduce",    val:0.9,  req:-1},
@@ -613,12 +657,14 @@ var perks=[
   {name:"Speed Demon",        desc:"All businesses run 30% faster",        cost:12000,  owned:false,type:"bizspdpct",     val:0.30, req:-1},
   {name:"Double Down",        desc:"All businesses earn +150%",            cost:50000,  owned:false,type:"incomepct",     val:1.50, req:-1},
   {name:"Passive Millionaire",desc:"+$1K/sec passive income",              cost:100000, owned:false,type:"baseincome",    val:1000, req:-1},
-  {name:"Prestige Master",    desc:"Prestige income +50% per prestige",    cost:500000, owned:false,type:"prestigepct",   val:0.50, req:-1},
+  {name:"Prestige Master",    desc:"Prestige income +50% per prestige",    cost:1e9,    owned:false,type:"prestigepct",   val:0.50, req:-1},
   {name:"Turbo Business",     desc:"All businesses run 80% faster",        cost:2000000,owned:false,type:"bizspdpct",     val:0.80, req:-1},
   {name:"Mega Passive",       desc:"+$1M/sec passive income",              cost:1e7,    owned:false,type:"baseincome",    val:1e6,  req:-1},
+  {name:"Passive Titan",      desc:"+$10M/sec passive income",             cost:8e7,    owned:false,type:"baseincome",    val:1e7,  req:-1},
+  {name:"Passive Emperor",    desc:"+$100M/sec passive income",            cost:5e8,    owned:false,type:"baseincome",    val:1e8,  req:-1},
+  {name:"Passive Overlord",   desc:"+$500M/sec passive income",            cost:3e9,    owned:false,type:"baseincome",    val:5e8,  req:-1},
   {name:"Ultra Passive",      desc:"+$1B/sec passive income",              cost:1e10,   owned:false,type:"baseincome",    val:1e9,  req:-1},
-  {name:"Monopoly",            desc:"All businesses earn 5x",               cost:5e10,   owned:false,type:"empireall",     val:5,    req:-1},
-  // Locked perks — shown at bottom until req met, then sorted by cost into main list
+  {name:"Monopoly",           desc:"All businesses earn 5x",               cost:5e10,   owned:false,type:"empireall",     val:5,    req:-1},
   {name:"Frenzy Master",      desc:"Frenzy cooldown 40% shorter",          cost:3000,   owned:false,type:"frenzypct",               req:0},
   {name:"Frenzy Duration",    desc:"Frenzy lasts 50% longer",              cost:6000,   owned:false,type:"frenzydurpct",  val:0.50, req:0},
   {name:"Lucky Star",         desc:"Lucky Coin pays out +200% more",       cost:4000,   owned:false,type:"luckypct",      val:2.00, req:62},
@@ -729,7 +775,7 @@ function addMoney(amt){
   var final=amt*(1+cashBonusMult);
   money+=final;totalEarned+=final;
   xp+=Math.max(0.001,final)*0.01;
-  while(xp>=xpNeeded){xp-=xpNeeded;playerLevel++;xpNeeded=Math.floor(xpNeeded*1.6);toast("LEVEL UP! "+levels[Math.min(playerLevel-1,levels.length-1)],"#44aaff");}
+  while(xp>=xpNeeded){xp-=xpNeeded;playerLevel++;xpNeeded=Math.floor(xpNeeded*2.2);toast("LEVEL UP! "+levels[Math.min(playerLevel-1,levels.length-1)],"#44aaff");}
   while(milestoneIdx<milestones.length&&totalEarned>=milestones[milestoneIdx]){
     toast("MILESTONE: "+fmt(milestones[milestoneIdx])+"!","#ffcc44");
     if(milestones[milestoneIdx]>=1e9&&!prestigeUnlocked){
@@ -803,9 +849,10 @@ function prestige(){
   hustleTokens+=gained;
   var pb=perks.find(function(p){return p.type==="prestigepct"&&p.owned;});
   prestigeMult=Math.pow(prestigeBaseMult,prestigeCount);
-  money=0;totalEarned=0;xp=0;playerLevel=1;xpNeeded=100;milestoneIdx=0;
-  for(var i=0;i<businesses.length;i++){businesses[i].owned=0;businesses[i].timer=0;}
+  money=0;totalEarned=0;xp=0;playerLevel=1;xpNeeded=500;milestoneIdx=0;
+  for(var i=0;i<businesses.length;i++){businesses[i].owned=0;businesses[i].timer=0;businesses[i].mult=1;}
   for(var i=0;i<upgrades.length;i++)upgrades[i].bought=false;
+  for(var i=0;i<perks.length;i++)perks[i].owned=false;  // perks reset on prestige
   consumableTierUnlocked=0;
   comboUnlocked=false;document.getElementById("combo-zone").style.display="none";
   for(var i=0;i<consumables.length;i++)consumables[i].cdLeft=0;
@@ -824,24 +871,10 @@ function prestige(){
     }
   }
   if(treeNodes[0].bought)cashBonusMult+=0.05;
-  // Re-apply owned perks (they survive prestige but clickValue/mult was reset)
+  // Reset perk effects since perks are reset
   perkEffects.bizSpeedMult=1;perkEffects.basePassive=0;perkEffects.costReduce=1;
+  perkEffects.luckyBoost=1;perkEffects.rainbowMult=1;
   frenzyCdMax=45;frenzyDur=8;
-  for(var i=0;i<perks.length;i++){
-    var p=perks[i];if(!p.owned)continue;
-    if(p.type==="baseincome")    perkEffects.basePassive+=p.val;
-    if(p.type==="costreduce")    perkEffects.costReduce*=p.val;
-    if(p.type==="clickpct")      clickMult*=(1+p.val);
-    if(p.type==="goldtouch")     clickValue*=p.val;
-    if(p.type==="incomepct")     {for(var j=0;j<businesses.length;j++)businesses[j].mult*=(1+p.val);}
-    if(p.type==="empireall")     {for(var j=0;j<businesses.length;j++)businesses[j].mult*=p.val;}
-    if(p.type==="bizspdpct")     perkEffects.bizSpeedMult*=(1+p.val);
-    if(p.type==="frenzypct")     frenzyCdMax*=0.60;
-    if(p.type==="frenzydurpct")  frenzyDur*=(1+p.val);
-    if(p.type==="luckypct")      perkEffects.luckyBoost+=(p.val||2);
-    if(p.type==="rainbowpct")    perkEffects.rainbowMult*=(1+p.val);
-    if(p.type==="prestigepct")   prestigeBaseMult+=(prestigeBaseMult*p.val);
-  }
   calcPerSec();
   document.getElementById("prestige-overlay").style.opacity="1";
   setTimeout(function(){document.getElementById("prestige-overlay").style.opacity="0";},1500);
@@ -1083,7 +1116,20 @@ function applyTreeNode(node){
   if(node.type==="unlock_mega"){megaFrenzyUnlocked=true;}
   if(node.type==="unlock_prestige"){prestigeUnlocked=true;}
   if(node.type==="unlock_buyall"){buyAllUnlocked=true;listsDirty=true;}
-  if(node.type==="consumable_tier"){consumableTierUnlocked=Math.max(consumableTierUnlocked,node.tierVal);toast("Tier "+node.tierVal+" consumables unlocked!","#ff88cc");listsDirty=true;}
+  if(node.type==="consumable_tier"){
+    consumableTierUnlocked=Math.max(consumableTierUnlocked,node.tierVal);
+    toast("Tier "+node.tierVal+" consumables unlocked!","#ff88cc");
+    // Only show "new perks" if there's actually a perk that requires THIS consumable tier node
+    var newPerks=perks.filter(function(p){return p.req===node.id&&!p.owned;});
+    if(newPerks.length>0){
+      setTimeout(function(){
+        var perkNames=newPerks.map(function(p){return p.name;}).join(", ");
+        toast("🎉 New perk"+(newPerks.length>1?"s":"")+" unlocked: "+perkNames,"#44aaff");
+        listsDirty=true;
+      },1200);
+    }
+    spawnRainbowBurst(W/2,H/2,16);listsDirty=true;
+  }
   if(node.type==="timebank_unlock"){toast("⏱️ Time Bank unlocked! Spend tokens for instant cash.","#ffcc44");}
   if(node.type==="combo_unlock"){comboUnlocked=true;document.getElementById("combo-zone").style.display="flex";toast("Combo multiplier unlocked!","#ffcc44");}
   if(node.type==="combocap"){perkEffects.comboCap=node.val;toast("Combo cap raised to "+node.val+"x!","#ffcc44");}
@@ -1524,7 +1570,7 @@ function loop(){
   for(var i=0;i<businesses.length;i++){
     var b=businesses[i];if(b.owned<=0)continue;
     b.timer+=dt*perkEffects.bizSpeedMult;
-    if(b.timer>=b.interval){b.timer-=b.interval;var earned=bizIncome(b);addMoney(earned);if(Math.random()<0.18)floaties.push({x:25+Math.random()*(W*0.25),y:H-220,vy:-1.3,life:1,text:"+"+fmt(earned)+" "+b.icon,color:rainbowActive?rainbowColor(t):b.color,sz:9});}
+    while(b.timer>=b.interval){b.timer-=b.interval;var earned=bizIncome(b);addMoney(earned);if(Math.random()<0.18)floaties.push({x:25+Math.random()*(W*0.25),y:H-220,vy:-1.3,life:1,text:"+"+fmt(earned)+" "+b.icon,color:rainbowActive?rainbowColor(t):b.color,sz:9});}
   }
   if(perkEffects.basePassive>0)addMoney(perkEffects.basePassive*dt);
   for(var i=floaties.length-1;i>=0;i--){var f=floaties[i];f.y+=f.vy;f.vy*=0.97;f.life-=0.02;if(f.life<=0)floaties.splice(i,1);}
@@ -1598,7 +1644,7 @@ function loadState(s){
   if(s.v!==3)return false;
 
   money=s.money||0; totalEarned=s.totalEarned||0;
-  xp=s.xp||0; xpNeeded=s.xpNeeded||100; playerLevel=s.playerLevel||1;
+  xp=s.xp||0; xpNeeded=s.xpNeeded||500; playerLevel=s.playerLevel||1;
   combo=s.combo||1; comboTimer=s.comboTimer||0; comboUnlocked=!!s.comboUnlocked;
   hustleTokens=s.hustleTokens||0; prestigeCount=s.prestigeCount||0;
   prestigeMult=s.prestigeMult||1; prestigeBaseMult=s.prestigeBaseMult||1.5;
@@ -1809,6 +1855,11 @@ function confirmWipe(){
   document.getElementById("rainbow-overlay").style.opacity="0";
   effectList={};renderEffects();
   calcPerSec();listsDirty=true;
+  // Clear leaderboard link and remove our entry from the board
+  var oldName=lbLinkedName;
+  lbLinkedSlot=null;lbLinkedName=null;
+  localStorage.removeItem(LB_LINK_STORE);
+  if(oldName){removeScore(oldName);}  // async, fire and forget
   cancelWipe();
   closeSave();
   toast("Progress wiped. Starting fresh!","#ff4444");
@@ -2013,7 +2064,39 @@ function openSave(){ document.getElementById("save-modal").className="open"; ren
 function closeSave(){ document.getElementById("save-modal").className=""; }
 
 // ── LEADERBOARD ──
-// ── GLOBAL LEADERBOARD via npoint.io ──
+// ── FEEDBACK SYSTEM ──
+// Feedback goes to a separate npoint bin — create one at npoint.io with {"feedback":[]}
+// and paste the ID below.
+var FEEDBACK_URL="https://corsproxy.io/?https://api.npoint.io/FEEDBACK_BIN_ID_HERE";
+
+function openFeedback(){ document.getElementById("feedback-modal").className="open"; document.getElementById("feedback-msg").textContent=""; }
+function closeFeedback(){ document.getElementById("feedback-modal").className=""; }
+
+async function submitFeedback(){
+  var text=document.getElementById("feedback-text").value.trim();
+  if(!text){document.getElementById("feedback-msg").textContent="Please write something first.";document.getElementById("feedback-msg").style.color="#ff4444";return;}
+  if(text.length>500){document.getElementById("feedback-msg").textContent="Please keep it under 500 characters.";document.getElementById("feedback-msg").style.color="#ff4444";return;}
+  if(FEEDBACK_URL.includes("FEEDBACK_BIN_ID_HERE")){
+    document.getElementById("feedback-msg").textContent="Feedback system not configured yet.";
+    document.getElementById("feedback-msg").style.color="#ffcc44";return;
+  }
+  try{
+    document.getElementById("feedback-msg").textContent="Sending...";
+    document.getElementById("feedback-msg").style.color="#555";
+    var resp=await fetch(FEEDBACK_URL);
+    var data=await resp.json();
+    var entries=data.feedback||[];
+    entries.push({text:text,ts:Date.now(),level:playerLevel,prestige:prestigeCount});
+    await fetch(FEEDBACK_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({feedback:entries})});
+    document.getElementById("feedback-msg").textContent="✓ Feedback sent! Thank you.";
+    document.getElementById("feedback-msg").style.color="#44ff88";
+    document.getElementById("feedback-text").value="";
+    setTimeout(closeFeedback,2000);
+  }catch(e){
+    document.getElementById("feedback-msg").textContent="Could not send — try again later.";
+    document.getElementById("feedback-msg").style.color="#ff4444";
+  }
+}
 var LB_URL="https://corsproxy.io/?https://api.npoint.io/38273609a166d56da096";
 var LB_LINK_STORE="hustle_lb_link";
 var lbLinkedSlot=null;
@@ -2291,16 +2374,15 @@ var autosaveInterval=setInterval(function(){
   lbAutoUpdate(); // also push linked slot score to leaderboard
 },60000);
 
-// Load autosave on startup if no manual saves exist
+// Restore autosave on startup — always load it since it's the most recent session state
 (function(){
-  var anyManual=false;
-  for(var i=1;i<=NUM_SLOTS;i++) if(localStorage.getItem(slotKey(i))) anyManual=true;
-  // Silently restore autosave if present and no manual save loaded
   var auto=localStorage.getItem(SAVE_KEY_PREFIX+"autosave");
-  if(auto&&!anyManual){
+  if(auto){
     try{
       var d=JSON.parse(auto);
-      if(loadState(d)===true) toast("Autosave restored!","#44ff88");
+      if(loadState(d)===true){
+        toast("Session restored from autosave.","#44ff88");
+      }
     }catch(e){}
   }
 })();
