@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v123</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v124</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -1448,12 +1448,23 @@ function tickChainSpawn(dt){
   if(pctEl) pctEl.textContent=chancePct+"%";
   if(chainTimerSecs<chainMinSecs)return;
   var chancePerSec=spawnProgress*0.006;
-  if(Math.random()<chancePerSec*dt){
+  // If we've hit 100% force spawn — don't let it sit stuck at max
+  var forceSpawn=(spawnProgress>=1);
+  if(forceSpawn||Math.random()<chancePerSec*dt){
     chainInProgress=true;
     chainStep=0;
     chainTimerSecs=0;
     toast("💵 Money Chain appeared! Find it!","#44ff88");
-    setTimeout(spawnChainBtn,300);
+    setTimeout(function(){
+      // If spawnChainBtn fails (zone not found), reset so bar starts over
+      spawnChainBtn();
+      setTimeout(function(){
+        if(chainInProgress&&!chainFloatBtn){
+          chainInProgress=false;
+          chainTimerSecs=0;
+        }
+      },500);
+    },300);
   }
 }
 
