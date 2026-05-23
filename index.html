@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v124</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v125</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -858,8 +858,8 @@ var treeNodes=[
       {id:42,x:710,y:900, name:"Cash Bonus VII",   icon:"💵",  desc:"+250% to all cash earned.",                                              cost:600, bought:false,req:[40],         type:"cashbonus",val:2.5,color:"#ffcc44"},
       {id:43,x:840,y:900, name:"Prestige Surge",   icon:"✨",  desc:"Prestige multiplier raised to 2.1x per prestige (stacks with Booster).",                              cost:600, bought:false,req:[41],         type:"prestigeboostnode2",color:"#cc44ff"},
       {id:44,x:1070,y:900, name:"Absolute Speed",   icon:"⏩",  desc:"All businesses run 50x faster.",                                        cost:700, bought:false,req:[43],         type:"bizspeednode",val:50,color:"#44ffcc"},
-      {id:45,x:540,y:1020,name:"Infinite Wealth",  icon:"∞",   desc:"+$500K/sec passive income permanently.",                                   cost:1500,bought:false,req:[46,47],      type:"baseincome",val:500000,color:"#ffcc44"},
-      {id:46,x:710,y:1020,name:"Click Universe",   icon:"🌌",  desc:"Clicks earn 50x. A massive but fair endgame click boost.",               cost:1800,bought:false,req:[39,48],      type:"clickuniverse",    color:"#44ff88"},
+      {id:45,x:540,y:1020,name:"Infinite Wealth",  icon:"∞",   desc:"+$500K/sec passive income permanently.",                                   cost:1500,bought:false,req:[41,44],      type:"baseincome",val:500000,color:"#ffcc44"},
+      {id:46,x:710,y:1020,name:"Click Universe",   icon:"🌌",  desc:"Clicks earn 50x. A massive but fair endgame click boost.",               cost:1800,bought:false,req:[35,44],      type:"clickuniverse",    color:"#44ff88"},
       {id:47,x:1070,y:1020,name:"Max Speed",        icon:"⏩",  desc:"All businesses run 200x faster.",                        cost:1200, bought:false,req:[49],         type:"bizspeednode",val:200,color:"#44ffcc"},
       {id:48,x:640,y:1140,name:"GODMODE",           icon:"👑",  desc:"Unlock all systems, +50% cash, +100% business income, 1.5x clicks, -30% cooldowns, +25% prestige tokens.",     cost:2500,bought:false,req:[45,46,47],type:"godmode",    color:"#ffd700"},
       {id:49,x:1260,y:300, name:"Time Bank",       icon:"🏦",  desc:"Unlock instant income payouts — spend tokens for cash equal to your $/sec × time. Payouts can be bought repeatedly.",cost:8,bought:false,req:[0],type:"timebank_unlock",color:"#ffcc44"},
