@@ -299,7 +299,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; pointer-events: no
     </div>
     <div id="right-hud">
       <div id="top-right-btns">
-        <div style="font-size:9px;color:#333;margin-right:2px;">v125</div>
+        <div style="font-size:9px;color:#333;margin-right:2px;">v127</div>
         <div id="level-display">Level 1 Button Pusher</div>
         <button id="save-btn" onclick="openSave()" title="Save / Load">💾</button>
         <button id="lb-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
@@ -896,7 +896,7 @@ function comboWindowForLevel(c){
   }
 }
 function bizCost(b){return Math.floor(b.baseCost*Math.pow(1.15,b.owned)*perkEffects.costReduce);}
-function bizIncome(b){return b.baseIncome*b.owned*b.mult*incomeBoost*globalMult*prestigeMult*(1+globalIncomeBonus);}
+function bizIncome(b){return b.baseIncome*b.owned*b.mult*incomeBoost*globalMult*prestigeMult*(1+Math.max(-0.99,globalIncomeBonus));}
 function calcPerSec(){
   var spd=Math.min(20,Math.max(1,perkEffects.bizSpeedMult*(Math.max(1,1+(perkEffects.bizSpeedBonus||0)-1))));
   var tot=perkEffects.basePassive;
@@ -990,6 +990,9 @@ function prestige(){
   globalIncomeBonus=0;
   if(comboMaxActive){comboMaxActive=false;removeEffect("🔥 MAX COMBO! 3x ALL");}
   cashBonusMult=0;
+  // Reset perk effects BEFORE re-applying tree nodes
+  perkEffects={comboCap:8,comboTimerMult:1,luckyBoost:1,rainbowMult:1,costReduce:1,basePassive:0,bizSpeedMult:1,bizSpeedBonus:0};
+  frenzyCdMax=45;frenzyDur=8;
   // Re-apply tree bonuses that survive prestige
   for(var i=0;i<treeNodes.length;i++){
     if(treeNodes[i].bought){
@@ -1005,6 +1008,8 @@ function prestige(){
     }
   }
   if(treeNodes[0].bought)cashBonusMult+=0.05;
+  // Ensure click values are sane after tree re-apply
+  clickValue=Math.max(1,clickValue);clickMult=Math.max(1,clickMult);
   // Reset perk effects since perks are reset
   perkEffects.bizSpeedMult=1;perkEffects.basePassive=0;perkEffects.costReduce=1;
   perkEffects.luckyBoost=1;perkEffects.rainbowMult=1;
@@ -1123,7 +1128,7 @@ function buyUpgrade(idx){
   calcPerSec();toast(u.name+" unlocked!","#44ff88");spawnRainbowBurst(W/2,H/2,12);listsDirty=true;updateUI();renderAll();
 }
 
-function buyBiz(idx){var b=businesses[idx],cost=bizCost(b);if(money<cost)return;money-=cost;b.owned++;calcPerSec();listsDirty=true;updateUI();renderAll();}
+function buyBiz(idx){var b=businesses[idx],cost=bizCost(b);if(money<cost)return;money-=cost;b.owned++;listsDirty=true;calcPerSec();updateUI();renderAll();}
 
 function buyMaxBiz(idx){
   if(!buyAllUnlocked)return;
